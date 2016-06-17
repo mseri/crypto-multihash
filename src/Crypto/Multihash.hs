@@ -10,7 +10,7 @@ module Crypto.Multihash
   ( MultihashDigest
   , Base            (..)
   , Codable         (..)
-  , HashAlgorithm   (..)
+  , HashAlgorithm
   , SHA1(..)
   , SHA256(..)
   , SHA512(..)
@@ -92,8 +92,8 @@ multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> Mult
 multihash alg bs = let digest = (hash bs) 
                    in MultihashDigest alg (BA.length digest) digest
 
--- | Encoder for 'Multihash'es.
---   Throws an error if the Multihash length field does not match the Digest length
+-- | Encoder for 'Multihash'.
+--   Throws an error if the 'Multihash' length field does not match the 'Digest' length.
 encode :: (HashAlgorithm a, Codable a, Show a) => Base -> MultihashDigest a -> String
 encode base (MultihashDigest alg len md) = if len == len'
     then map (toEnum . fromIntegral) fullDigestUnpacked
