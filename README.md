@@ -1,5 +1,11 @@
 # Crypto Multihash
 
+![Hackage](https://img.shields.io/hackage/v/crypto-multihash.svg)
+![Hackage Dependencies](https://img.shields.io/hackage-deps/v/crypto-multihash.svg)
+![Haskell Programming Language](https://img.shields.io/badge/language-Haskell-blue.svg)
+![BSD3 License](http://img.shields.io/badge/license-BSD3-brightgreen.svg)
+
+
 Multihash library implemented on top of [cryptonite](https://hackage.haskell.org/package/cryptonite) cryptographic library. 
 Multihash is a protocol for encoding the hash algorithm and digest length at the start of the digest, see the official [multihash github page](https://github.com/jbenet/multihash/).
 
@@ -27,10 +33,23 @@ main = do
 
 # Test
 
-Some preliminary tests can be performed with `stack test`.
-A simple example encoder is in `app/Main.hs`. You can run it on files (e.g. `echo -n test | stack exec mh -- somefile someotherfile`) or read data from the standard input (e.g. `echo -n test | stack exec mh -- -`)
+Some preliminary tests can be performed with `stack test`. 
+
+A simple example encoder is in `app/Main.hs`. 
+You can run it on files
+
+```{.bash}
+    echo -n test | stack exec mh -- somefile someotherfile
+```
+
+or read data from the standard input 
+
+```{.bash}
+echo -n test | stack exec mh -- -`
+```
 
 # TODO
+
 - Improve documentation
 - Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)
 - Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type
