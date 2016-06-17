@@ -31,6 +31,7 @@ Some preliminary tests can be performed with `stack test`.
 A simple example encoder is in `app/Main.hs`. You can run it on files (e.g. `echo -n test | stack exec mh -- somefile someotherfile`) or read data from the standard input (e.g. `echo -n test | stack exec mh -- -`)
 
 # TODO
+- Improve documentation
 - Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)
 - Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type
 - Implement `shake-128` and `shake-256` multihashes
