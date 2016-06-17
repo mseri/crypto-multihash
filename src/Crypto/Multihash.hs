@@ -1,3 +1,11 @@
+-- | Multihash library built on top of haskell 'cryptonite' crypto package
+-- Multihash is a protocol for encoding the hash algorithm and digest length 
+-- at the start of the digest, see the official 
+-- <https://github.com/jbenet/multihash/ multihash github>.
+--
+-- The library re-exports 'HashAlgorithm' and few hash algorithms 
+-- from 'Crypto.Hash.Algorithms'. These are the algorithms supported 
+-- for multihashing.
 module Crypto.Multihash
   ( MultihashDigest
   , Base            (..)
@@ -29,20 +37,23 @@ import qualified Data.ByteString.Base58 as B58
 import Data.Word (Word8)
 import Text.Printf (printf)
 
+-- | 'Base' used to encode the digest 
 data Base = Base16  -- ^ Hex encoding
-          | Base32  -- ^ Not implemented. For reasons that I did not investigate, the instance in Data.ByteArray produces output not conformant with the multihash spec.
-          | Base58  -- ^ Bitcoin Base58 encoding, the one used also by IPFS
+          | Base32  -- ^ Not yet implemented. Waiting for <https://github.com/jbenet/multihash/issues/31 this issue to resolve>
+          | Base58  -- ^ Bitcoin base58 encoding
           | Base64  -- ^ Base64 encoding
           deriving (Eq)
 
 -- | Multihash Digest container
 data MultihashDigest a = MultihashDigest
-  { getAlgorithm :: a
-  , getLength :: Int
-  , getDigest :: Digest a
+  { getAlgorithm :: a     -- ^ hash algorithm
+  , getLength :: Int      -- ^ hash lenght
+  , getDigest :: Digest a -- ^ binary digest data
   }
 
+-- | 'Codable' hash algorithms are the algorithms supported for multihashing
 class Codable a where
+  -- | Returns the first byte for the multihash digest
   toCode :: a -> Int
 
 instance Codable SHA1 where
@@ -71,10 +82,12 @@ instance Codable Blake2s_256 where
 instance Show (MultihashDigest a) where
     show (MultihashDigest _ _ d) = show d
 
+-- | Helper to multihash a lazy 'ByteString' using a supported hash algorithm.
 multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
 multihashlazy alg bs = let digest = (hashlazy bs) 
                        in MultihashDigest alg (BA.length digest) digest
 
+-- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'ByteString') using a supported hash algorithm.
 multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> MultihashDigest a
 multihash alg bs = let digest = (hash bs) 
                    in MultihashDigest alg (BA.length digest) digest

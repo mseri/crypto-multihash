@@ -39,7 +39,7 @@ A simple example encoder is in `app/Main.hs`.
 You can run it on files
 
 ```{.bash}
-    echo -n test | stack exec mh -- somefile someotherfile
+echo -n test | stack exec mh -- somefile someotherfile
 ```
 
 or read data from the standard input 
