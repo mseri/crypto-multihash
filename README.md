@@ -1,6 +1,6 @@
 # Crypto Multihash
 
-Multihash library implemented on top of cryptonite cryptographic library. 
+Multihash library implemented on top of [cryptonite](https://hackage.haskell.org/package/cryptonite) cryptographic library. 
 Multihash is a protocol for encoding the hash algorithm and digest length at the start of the digest, see the official [multihash github page](https://github.com/jbenet/multihash/).
 
 This library is still experimental and the api is not guaranteed stable. 
