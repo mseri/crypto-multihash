@@ -48,6 +48,17 @@ or read data from the standard input
 echo -n test | stack exec mh -- -`
 ```
 
+# Contribution
+
+1. Fork repository
+2. Do some changes
+3. Create pull request
+4. Wait for CI build and review
+
+You can use stack to build the project: `stack build`
+
+To run tests: `stack test`
+
 # TODO
 
 - Improve documentation
