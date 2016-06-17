@@ -12,7 +12,7 @@ matrix:
     - env: CABALVER=1.24 GHCVER=8.0.1 ARGS="--resolver lts-6.3"
       addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1],sources: [hvr-ghc]}}
 
-    allow_failures:
+  allow_failures:
     - env: ARGS="--resolver nightly"
       addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1],sources: [hvr-ghc]}}
 
