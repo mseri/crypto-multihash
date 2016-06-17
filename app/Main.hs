@@ -22,6 +22,7 @@ main = do
 printer :: (HashAlgorithm a, Codable a, Show a) => a -> ByteString -> IO ()
 printer alg bs = do
   let m = multihash alg bs
+  putStrLn $ printf "Hash algorithm: %s" (show alg)
   putStrLn $ printf "Base16: %s" (encode Base16 m)
   -- Base32 missing
   putStrLn $ printf "Base58: %s" (encode Base58 m)
@@ -40,6 +41,7 @@ printers f = do
   printer SHA3_224 d
   printer Blake2b_512 d
   printer Blake2s_256 d
+  putStrLn ""
   where withFile f = if f == "-" then B.getContents else B.readFile f
 
 data Flag = Help                  -- --help
