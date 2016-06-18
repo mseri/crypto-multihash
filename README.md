@@ -62,8 +62,10 @@ To run tests: `stack test`
 
 # TODO
 
-- Improve documentation
-- Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)
-- Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type
+- ~~Improve documentation~~
+- ~~Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)~~
+- ~~Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type~~
+- Add testing for the newly introduced checker and for raised exceptions
+- Add multihash checker into the cli example
 - Implement `shake-128` and `shake-256` multihashes
 - Implement `Base32` encoding waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)
