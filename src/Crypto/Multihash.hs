@@ -43,7 +43,7 @@ module Crypto.Multihash
   , Blake2s_256(..)
   ) where
 
-import Crypto.Hash (HashAlgorithm(..), Digest, hash, hashlazy)
+import Crypto.Hash (Digest, hash, hashlazy)
 import Crypto.Hash.Algorithms
 --import Crypto.Hash.IO
 import Data.ByteArray (ByteArrayAccess, Bytes)
@@ -53,7 +53,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Base58 as B58
-import Data.List (findIndex)
+import Data.List (elemIndex)
 import Data.Word (Word8)
 import Text.Printf (printf)
 
@@ -103,14 +103,14 @@ instance Codable Blake2s_256 where
 instance Show (MultihashDigest a) where
     show (MultihashDigest _ _ d) = show d
 
--- | Helper to multihash a lazy 'ByteString' using a supported hash algorithm.
+-- | Helper to multihash a lazy 'BL.ByteString' using a supported hash algorithm.
 multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
-multihashlazy alg bs = let digest = (hashlazy bs) 
+multihashlazy alg bs = let digest = hashlazy bs
                        in MultihashDigest alg (BA.length digest) digest
 
--- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'ByteString') using a supported hash algorithm.
+-- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'BS.ByteString') using a supported hash algorithm.
 multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> MultihashDigest a
-multihash alg bs = let digest = (hash bs) 
+multihash alg bs = let digest = hash bs
                    in MultihashDigest alg (BA.length digest) digest
 
 
@@ -132,10 +132,11 @@ encode base (MultihashDigest alg len md) = if len == len'
       where 
         encoder :: ByteArrayAccess a => a -> Either String Bytes
         encoder bs = case base of
-                    Base2  -> return $ BA.convert $ bs
+                    Base2  -> return $ BA.convert bs
                     Base16 -> return $ BE.convertToBase BE.Base16 bs
                     Base32 -> Left "Base32 encoder not implemented"
-                    Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet $ (BA.convert bs :: BS.ByteString)
+                    Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet 
+                                                                     (BA.convert bs :: BS.ByteString)
                     Base64 -> return $ BE.convertToBase BE.Base64 bs
 
     fullDigest :: Bytes
@@ -144,12 +145,13 @@ encode base (MultihashDigest alg len md) = if len == len'
         dHead :: Word8
         dHead = fromIntegral $ toCode alg
         dSize :: Word8
-        dSize = fromIntegral $ len'
+        dSize = fromIntegral len'
         dTail :: Bytes
         dTail = BA.convert md
 
 -- | Encoder for 'MultihashDigest'.
---   Throws an error if the 'MultihashDigest' length field does not match the 'Digest' length.
+--   Throws an error if there are encoding issues or the 'MultihashDigest'
+--   length field does not match the 'Digest' length.
 encode' :: (HashAlgorithm a, Codable a, Show a) => Base -> MultihashDigest a -> String
 encode' base md = 
   case encode base md of
@@ -157,7 +159,8 @@ encode' base md =
     Left err  -> error err
 
 -- | Check the correctness of an encoded 'MultihashDigest' against the data it
---   is supposed to have hashed, passed as a 'ByteArrayAccess' (e.g. a 'BinaryString').
+--   is supposed to have hashed. Tha data is passed as a 
+--   'ByteArrayAccess' (e.g. a 'BS.BinaryString').
 checkMultihash :: ByteArrayAccess bs => BS.ByteString -> bs -> Either String Bool
 checkMultihash hash unahshedData = do
   base <- getBase hash
@@ -166,13 +169,13 @@ checkMultihash hash unahshedData = do
   -- Hacky... think to a different approach
   return (C.pack m == mhd)
 
--- Helpers
+-- Helpers - These are not exported currently, and probably will never be.
 
 maybeToEither :: l -> Maybe r -> Either l r
 maybeToEither _ (Just res) = Right res
 maybeToEither err _        = Left err
 
--- | Convert a 'ByteString' from a 'Base' into a 'BinaryString' in 'Base2'.
+-- | Convert a 'BS.ByteString' from a 'Base' into a 'BS.BinaryString' in 'Base2'.
 convertFromBase :: Base -> BS.ByteString -> Either String BS.ByteString
 convertFromBase b bs = case b of
   Base2  -> Left "This is not supposed to happen"
@@ -183,7 +186,7 @@ convertFromBase b bs = case b of
     return (BA.convert dec)
   Base64 -> BE.convertFromBase BE.Base64 bs
 
--- | Infer the 'Base' encoding function from an encoded 'BinaryString' representing 
+-- | Infer the 'Base' encoding function from an encoded 'BS.BinaryString' representing 
 -- a 'MultihashDigest'.
 getBase :: BS.ByteString -> Either String Base
 getBase h
@@ -191,13 +194,13 @@ getBase h
       | startWiths h ["5d", "Qm", "8V", "8t", "G9", "W1", "5d", "S2", "2U"] = Right Base58
       | startWiths h ["ER", "Ei", "E0", "FE", "FT", "Fi", "Fx", "QE", "QS"] = Right Base64
       | otherwise = Left "Unable to infer an encoding"
-      where startWiths h ls = any (flip BS.isPrefixOf h) ls
+      where startWiths h = any (`BS.isPrefixOf` h)
 
--- | Infer the hash function from an unencoded 'BinaryString' representing 
+-- | Infer the hash function from an unencoded 'BS.BinaryString' representing 
 -- a 'MultihashDigest' and uses it to binary encode the data in a 'MultihashDigest'.
 getBinaryEncodedMultihash :: ByteArrayAccess bs => BS.ByteString -> bs -> Either String String
 getBinaryEncodedMultihash mhd uh = let bitOne = head $ BS.unpack mhd in
-  case findIndex ((==) bitOne) hashCodes of
+  case elemIndex bitOne hashCodes of
     Just 0 -> rs SHA1 uh
     Just 1 -> rs SHA256 uh
     Just 2 -> rs SHA512 uh
@@ -212,6 +215,5 @@ getBinaryEncodedMultihash mhd uh = let bitOne = head $ BS.unpack mhd in
   where 
     rs alg = encode Base2 . multihash alg
     hashCodes :: [Word8]
-    hashCodes = map (\i -> fromIntegral i) 
+    hashCodes = map fromIntegral
                     ([0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x40, 0x41]::[Int])
-    mhdPrefix = flip BS.isPrefixOf mhd

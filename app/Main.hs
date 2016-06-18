@@ -56,7 +56,7 @@ parse argv = case getOpt Permute flags argv of
         let files = if null fs then ["-"] else fs
         if Help `elem` args
             then do hPutStrLn stderr (usageInfo header flags)
-                    exitWith ExitSuccess
+                    exitSuccess
             else return (nub (concatMap set args), files)
  
     (_,_,errs)   -> do
