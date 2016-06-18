@@ -2,7 +2,6 @@
 
 module Main where
 
-import Control.Monad
 import Crypto.Multihash
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -15,7 +14,7 @@ import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  (args, files) <- getArgs >>= parse
+  (_args, files) <- getArgs >>= parse
   mapM_ printers files
   putStrLn "Done! Note: shake-128/256 and Base32 are not yet part of the library"
  
@@ -23,12 +22,13 @@ printer :: (HashAlgorithm a, Codable a, Show a) => a -> ByteString -> IO ()
 printer alg bs = do
   let m = multihash alg bs
   putStrLn $ printf "Hash algorithm: %s" (show alg)
-  putStrLn $ printf "Base16: %s" (encode Base16 m)
+  putStrLn $ printf "Base16: %s" (encode' Base16 m)
   -- Base32 missing
-  putStrLn $ printf "Base58: %s" (encode Base58 m)
-  putStrLn $ printf "Base64: %s" (encode Base64 m)
+  putStrLn $ printf "Base58: %s" (encode' Base58 m)
+  putStrLn $ printf "Base64: %s" (encode' Base64 m)
   putStrLn ""
 
+printers :: FilePath -> IO ()
 printers f = do
   d <- withFile f
   putStrLn $ printf "Hashing %s\n" (if f == "-" then show d else show f)
@@ -47,8 +47,10 @@ printers f = do
 data Flag = Help                  -- --help
           deriving (Eq,Ord,Enum,Show,Bounded)
  
+flags :: [OptDescr Flag]
 flags = [Option [] ["help"] (NoArg Help) "Print this help message"]
- 
+
+parse :: [String] -> IO ([Flag], [String])
 parse argv = case getOpt Permute flags argv of
     (args,fs,[]) -> do
         let files = if null fs then ["-"] else fs
