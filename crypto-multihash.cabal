@@ -1,5 +1,5 @@
 name:                crypto-multihash
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Multihash library on top of cryptonite crypto library
 description:         Multihash is a protocol for encoding the hash algorithm
                      and digest length at the start of the digest, see the official
@@ -20,6 +20,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Crypto.Multihash
+  ghc-options:         -Wall -fwarn-tabs -fno-warn-name-shadowing -fwarn-pointless-pragmas
   build-depends:       base >= 4.7 && < 5
                      , base58-bytestring
                      , bytestring
