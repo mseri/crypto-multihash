@@ -1,5 +1,5 @@
 name:                crypto-multihash
-version:             0.2.0.0
+version:             0.2.0.1
 synopsis:            Multihash library on top of cryptonite crypto library
 description:         Multihash is a protocol for encoding the hash algorithm
                      and digest length at the start of the digest, see the official
