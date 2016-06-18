@@ -24,12 +24,19 @@ The `Base32` encoding is not yet supported due to discrepancy between the encodi
 
 import Crypto.Multihash
 import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (pack)
 
 main = do
-    let m = multihash SHA256 ("test"::ByteString)
+    let v = "test"::ByteString
+    let m = multihash SHA256 v
     putStrLn $ "Base16: " ++ (encode Base16 m)
     putStrLn $ "Base58: " ++ (encode Base58 m)
     putStrLn $ "Base64: " ++ (encode Base64 m)
+    
+    let h = encode' Base58 m
+    let h8 = (Data.ByteString.Char8.pack h)
+    checkMultihash h8 v
+    -- Right True
 ```
 
 # Test
