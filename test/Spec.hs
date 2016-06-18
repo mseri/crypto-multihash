@@ -40,11 +40,11 @@ main = hspec $ do
     testMHEncoding alg (sm16, sm58, sm64) = do
         describe (printf "Encoding %s multihash" (show alg)) $ do
           it "returns the correct Base16 hash" $ 
-            encode Base16 m `shouldBe` sm16
+            encode' Base16 m `shouldBe` sm16
           it "returns the correct Base58 hash" $ 
-            encode Base58 m `shouldBe` sm58
+            encode' Base58 m `shouldBe` sm58
           it "returns the correct Base64 hash" $ 
-            encode Base64 m `shouldBe` sm64
+            encode' Base64 m `shouldBe` sm64
       where 
         m = multihash alg ("test"::ByteString)
   
