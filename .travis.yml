@@ -25,9 +25,8 @@ before_install:
 
 install:
   - stack -j 2 setup --no-terminal $ARGS
-  - stack -j 2 test --no-terminal $ARGS
   - stack -j 2 build --only-snapshot --no-terminal $ARGS
 
 script:
-  - stack -j 2 test --no-terminal $ARGS
   - stack -j 2 build --no-terminal $ARGS
+  - stack -j 2 test --no-terminal $ARGS
