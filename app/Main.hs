@@ -22,10 +22,10 @@ printer :: (HashAlgorithm a, Codable a, Show a) => a -> ByteString -> IO ()
 printer alg bs = do
   let m = multihash alg bs
   putStrLn $ printf "Hash algorithm: %s" (show alg)
-  putStrLn $ printf "Base16: %s" (encode' Base16 m)
+  putStrLn $ printf "Base16: %s" (encode' Base16 m :: String)
   -- Base32 missing
-  putStrLn $ printf "Base58: %s" (encode' Base58 m)
-  putStrLn $ printf "Base64: %s" (encode' Base64 m)
+  putStrLn $ printf "Base58: %s" (encode' Base58 m :: String)
+  putStrLn $ printf "Base64: %s" (encode' Base64 m :: String)
   putStrLn ""
 
 printers :: FilePath -> IO ()
