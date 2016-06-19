@@ -54,6 +54,7 @@ import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Base58 as B58
 import Data.List (elemIndex)
+import Data.String (IsString(..))
 import Data.Word (Word8)
 import Text.Printf (printf)
 
@@ -115,16 +116,17 @@ multihash alg bs = let digest = hash bs
 
 
 -- | Safe encoder for 'MultihashDigest'.
-encode :: (HashAlgorithm a, Codable a, Show a) => Base -> MultihashDigest a -> Either String String
-encode base (MultihashDigest alg len md) = if len == len'
+encode :: (HashAlgorithm a, Codable a, Show a, IsString s) => 
+          Base -> MultihashDigest a -> Either String s
+encode base (MultihashDigest alg len md) = 
+  if len == BA.length md
     then do
       d <- fullDigestUnpacked
-      return $ map (toEnum . fromIntegral) d
-    else Left $ printf "Corrupted %s MultihashDigest. Lenght is %d but should be %d." (show alg) len len'
-  where
-    len' :: Int
-    len' = BA.length md
+      return $ fromString $ map (toEnum . fromIntegral) d
+    else 
+      Left $ printf "Corrupted %s MultihashDigest: invalid length" (show alg)
 
+  where
     fullDigestUnpacked :: Either String [Word8]
     fullDigestUnpacked = do
       d <- encoder fullDigest
@@ -145,14 +147,15 @@ encode base (MultihashDigest alg len md) = if len == len'
         dHead :: Word8
         dHead = fromIntegral $ toCode alg
         dSize :: Word8
-        dSize = fromIntegral len'
+        dSize = fromIntegral len
         dTail :: Bytes
         dTail = BA.convert md
 
 -- | Encoder for 'MultihashDigest'.
 --   Throws an error if there are encoding issues or the 'MultihashDigest'
 --   length field does not match the 'Digest' length.
-encode' :: (HashAlgorithm a, Codable a, Show a) => Base -> MultihashDigest a -> String
+encode' :: (HashAlgorithm a, Codable a, Show a, IsString s) 
+           => Base -> MultihashDigest a -> s
 encode' base md = 
   case encode base md of
     Right enc -> enc
@@ -165,9 +168,13 @@ checkMultihash :: ByteArrayAccess bs => BS.ByteString -> bs -> Either String Boo
 checkMultihash hash unahshedData = do
   base <- getBase hash
   mhd <- convertFromBase base hash
-  m <- getBinaryEncodedMultihash mhd unahshedData
   -- Hacky... think to a different approach
-  return (C.pack m == mhd)
+  if badLength mhd 
+    then 
+      Left "Corrupted MultihasDigest: invalid length"
+    else do
+      m <- getBinaryEncodedMultihash mhd unahshedData
+      return (C.pack m == mhd)
 
 -- Helpers - These are not exported currently, and probably will never be.
 
@@ -196,9 +203,18 @@ getBase h
       | otherwise = Left "Unable to infer an encoding"
       where startWiths h = any (`BS.isPrefixOf` h)
 
+-- | Compares the lenght of the encoded 'MultihashDigest' with the encoded hash length.
+--   Returns 'True' if the lengths are matching.
+badLength :: ByteArrayAccess bs => bs -> Bool
+badLength mh = 
+      case BA.length mh of
+        n | n <= 2 -> True
+        n | BA.index mh 1 /= (fromIntegral n-2) -> True
+        _ -> False
+
 -- | Infer the hash function from an unencoded 'BS.BinaryString' representing 
--- a 'MultihashDigest' and uses it to binary encode the data in a 'MultihashDigest'.
-getBinaryEncodedMultihash :: ByteArrayAccess bs => BS.ByteString -> bs -> Either String String
+--   a 'MultihashDigest' and uses it to binary encode the data in a 'MultihashDigest'.
+getBinaryEncodedMultihash :: (ByteArrayAccess bs, IsString s) => BS.ByteString -> bs -> Either String s
 getBinaryEncodedMultihash mhd uh = let bitOne = head $ BS.unpack mhd in
   case elemIndex bitOne hashCodes of
     Just 0 -> rs SHA1 uh
