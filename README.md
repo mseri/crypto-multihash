@@ -1,7 +1,7 @@
 # Crypto Multihash
 
 [![Build Status](https://travis-ci.org/mseri/crypto-multihash.svg?branch=master)](https://travis-ci.org/mseri/crypto-multihash)
-![Hackage](https://img.shields.io/hackage/v/crypto-multihash.svg)
+[![Hackage](https://img.shields.io/hackage/v/crypto-multihash.svg)](http://hackage.haskell.org/package/crypto-multihash)
 ![Hackage Dependencies](https://img.shields.io/hackage-deps/v/crypto-multihash.svg)
 ![Haskell Programming Language](https://img.shields.io/badge/language-Haskell-blue.svg)
 ![BSD3 License](http://img.shields.io/badge/license-BSD3-brightgreen.svg)
