@@ -5,7 +5,7 @@ description:         Multihash is a protocol for encoding the hash algorithm
                      and digest length at the start of the digest, see the official
                      <https://github.com/jbenet/multihash/ multihash github>.
                      Usage and additional informations are on README.md
-homepage:            https://github.com/mseri/crypto-multihash#readme
+homepage:            https://github.com/mseri/crypto-multihash#crypto-multihash
 license:             BSD3
 license-file:        LICENSE
 author:              Marcello Seri
