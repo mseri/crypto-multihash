@@ -164,6 +164,9 @@ encode' base md =
     Right enc -> enc
     Left err  -> error err
 
+-- TODO: use length in checkMultihash to treat correctly truncated hashes
+-- see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612
+
 -- | Safely check the correctness of an encoded 'MultihashDigest' against the 
 --   corresponding data. Tha data is passed as a 'ByteArrayAccess' 
 --   (e.g. a 'BS.BinaryString').

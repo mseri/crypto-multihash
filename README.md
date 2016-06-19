@@ -82,6 +82,7 @@ To run tests: `stack test`
 
 # TODO
 
+- Use `length` in `checkMultihash` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)
 - ~~Improve documentation~~
 - ~~Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)~~
 - ~~Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type~~
