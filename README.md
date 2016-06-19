@@ -20,23 +20,36 @@ The `Base32` encoding is not yet supported due to discrepancy between the encodi
 # Usage
 
 ```{.haskell}
+-- in ghci `:set -XOverloadedStrings`
 {-# LANGUAGE OverloadedStrings #-}
 
 import Crypto.Multihash
 import Data.ByteString (ByteString)
-import Data.ByteString.Char8 (pack)
 
 main = do
     let v = "test"::ByteString
     let m = multihash SHA256 v
-    putStrLn $ "Base16: " ++ (encode Base16 m)
-    putStrLn $ "Base58: " ++ (encode Base58 m)
-    putStrLn $ "Base64: " ++ (encode Base64 m)
     
-    let h = encode' Base58 m
-    let h8 = (Data.ByteString.Char8.pack h)
-    checkMultihash h8 v
+    putStrLn $ "Base16: " ++ (encode' Base16 m)
+    -- You might need to specify the encoded string type
+    putStrLn $ "Base58: " ++ (encode' Base58 m :: String)
+
+    -- `encode` is the safe interface returning an `Either` type
+    putStrLn $ "Base64: " ++ show (encode Base64 m :: Either String String)
+    
+    let h = encode' Base58 m :: ByteString
+    checkMultihash h v
     -- Right True
+
+    -- There is also an unsafe version, as for encode
+    checkMultihash' "whatever" v
+    -- *** Exception: Unable to infer an encoding
+    checkMultihash' "Eiwhatever" v
+    -- *** Exception: base64: input: invalid length
+    checkMultihash' "EiCfhtCBiEx9ZZov6qDFWtAVo79PGysLgizRXWwVsPA1CA==" v
+    -- False
+    checkMultihash' h v
+    -- True
 ```
 
 # Test
@@ -72,7 +85,7 @@ To run tests: `stack test`
 - ~~Improve documentation~~
 - ~~Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)~~
 - ~~Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type~~
-- Add testing for the newly introduced checker and for raised exceptions
+- Add testing for ~~the newly introduced checker and~~ for raised exceptions
 - Add multihash checker into the cli example
 - Implement `shake-128` and `shake-256` multihashes
 - Implement `Base32` encoding waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)
