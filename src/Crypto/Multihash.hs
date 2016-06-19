@@ -30,6 +30,7 @@ module Crypto.Multihash
   , multihash
   , multihashlazy
   , checkMultihash
+  , checkMultihash'
   -- * Re-exported types
   , HashAlgorithm
   , SHA1(..)
@@ -105,11 +106,13 @@ instance Show (MultihashDigest a) where
     show (MultihashDigest _ _ d) = show d
 
 -- | Helper to multihash a lazy 'BL.ByteString' using a supported hash algorithm.
+--   Uses 'Crypto.Hash.hashlazy' for hashing.
 multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
 multihashlazy alg bs = let digest = hashlazy bs
                        in MultihashDigest alg (BA.length digest) digest
 
--- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'BS.ByteString') using a supported hash algorithm.
+-- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'BS.ByteString') using a 
+--   supported hash algorithm. Uses 'Crypto.Hash.hash' for hashing.
 multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> MultihashDigest a
 multihash alg bs = let digest = hash bs
                    in MultihashDigest alg (BA.length digest) digest
@@ -151,7 +154,7 @@ encode base (MultihashDigest alg len md) =
         dTail :: Bytes
         dTail = BA.convert md
 
--- | Encoder for 'MultihashDigest'.
+-- | Unsafe encoder for 'MultihashDigest'.
 --   Throws an error if there are encoding issues or the 'MultihashDigest'
 --   length field does not match the 'Digest' length.
 encode' :: (HashAlgorithm a, Codable a, Show a, IsString s) 
@@ -161,9 +164,9 @@ encode' base md =
     Right enc -> enc
     Left err  -> error err
 
--- | Check the correctness of an encoded 'MultihashDigest' against the data it
---   is supposed to have hashed. Tha data is passed as a 
---   'ByteArrayAccess' (e.g. a 'BS.BinaryString').
+-- | Safely check the correctness of an encoded 'MultihashDigest' against the 
+--   corresponding data. Tha data is passed as a 'ByteArrayAccess' 
+--   (e.g. a 'BS.BinaryString').
 checkMultihash :: ByteArrayAccess bs => BS.ByteString -> bs -> Either String Bool
 checkMultihash hash unahshedData = do
   base <- getBase hash
@@ -175,6 +178,14 @@ checkMultihash hash unahshedData = do
     else do
       m <- getBinaryEncodedMultihash mhd unahshedData
       return (C.pack m == mhd)
+
+-- | Unsafe version of 'checkMultihash'. Throws on encoding/decoding errors 
+--   instead of returning an 'Either' type. 
+checkMultihash' :: ByteArrayAccess bs => BS.ByteString -> bs -> Bool
+checkMultihash' hash unahshedData = 
+  case checkMultihash hash unahshedData of
+    Right ans -> ans
+    Left err  -> error err
 
 -- Helpers - These are not exported currently, and probably will never be.
 
