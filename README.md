@@ -38,17 +38,27 @@ main = do
     putStrLn $ "Base64: " ++ show (encode Base64 m :: Either String String)
     
     let h = encode' Base58 m :: ByteString
-    checkMultihash h v
+    -- You can check that a multihash corresponds to some data `v`
+    -- but you need to wrap the data in the newtype `Payload`
+    checkPayload h (Payload v)
+    -- Right True
+
+    -- Or if you have a Multihash to compare you can use it
+    check h m
     -- Right True
 
     -- There is also an unsafe version, as for encode
-    checkMultihash' "whatever" v
+    -- note that sometimes you will need to specify the string types
+    checkPayload' ("whatever"::String) (Payload v)
     -- *** Exception: Unable to infer an encoding
-    checkMultihash' "Eiwhatever" v
+    checkPayload' ("Eiwhatever"::ByteString) (Payload v)
     -- *** Exception: base64: input: invalid length
-    checkMultihash' "EiCfhtCBiEx9ZZov6qDFWtAVo79PGysLgizRXWwVsPA1CA==" v
+    check' ("EiCfhtCBiEx9ZZov6qDFWtAVo79PGysLgizRXWwVsPA1CA=="::ByteString) m
     -- False
-    checkMultihash' h v
+
+    checkPayload' h v
+    -- True
+    check' h m
     -- True
 ```
 
@@ -84,9 +94,7 @@ To run tests: `stack test`
 
 - Use `length` in `checkMultihash` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)
 - ~~Improve documentation~~
-- ~~Implement hash checker that takes some data and an encoded multihash and check that the multihash corresponds to the data (inferring automatically the appropriate hash function)~~
-- ~~Evaluate if throwing an error in the encode function is the wanted behaviour and anyway implement a safe version returning an Either type~~
-- Add testing for ~~the newly introduced checker and~~ for raised exceptions
+- Improve testing for for raised exceptions
 - Add multihash checker into the cli example
 - Implement `shake-128` and `shake-256` multihashes
 - Implement `Base32` encoding waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)

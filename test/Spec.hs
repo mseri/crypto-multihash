@@ -35,10 +35,10 @@ main = hspec $ do
 
   describe ("Fails correctly when") $ do
     it "checking a truncated multihash" $
-      checkMultihash "1340ee26b0dd4af7e749aa1a8e" testString 
+      checkMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
     it "checking an invalid multihash" $
-      checkMultihash "dd4af7e749aa1a8e1340ee26b0" testString 
+      checkMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
         `shouldBe` Left "Unable to infer an encoding"
   where
     testMHEncoding :: (HashAlgorithm a, Codable a, Show a) => a 
