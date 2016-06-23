@@ -16,6 +16,8 @@ module Crypto.Multihash.Weak
   , weakMultihash
   , weakMultihashlazy
   , toWeakMultihash
+  , checkWeakMultihash
+  , checkWeakMultihash'
   ) where
 
 import Data.ByteArray (ByteArrayAccess, Bytes)
@@ -24,10 +26,15 @@ import qualified Data.ByteArray.Encoding as BE
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Base58 as B58
+import Data.String (IsString(..))
 import Data.String.Conversions
 
 import Crypto.Multihash.Internal.Types
 import Crypto.Multihash.Internal
+
+weakAlgos = [ "sha1", "sha256", "sha512", "sha3-512" 
+                , "sha3-384", "sha3-256", "sha3-224"
+                , "blake2b-512", "blake2s-256" ]
 
 weakMultihash :: (ConvertibleStrings s BS.ByteString, ByteArrayAccess bs) 
                  => s -> bs -> WeakMultihashDigest
@@ -50,3 +57,12 @@ instance Encodable WeakMultihashDigest where
 
 instance ByteArrayAccess bs => Checkable (Payload bs) where
   checkPayload hash_ (Payload p) = undefined
+
+-- | Alias for API retro-compatibility
+checkWeakMultihash :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
+                  => s -> bs -> Either String Bool
+checkWeakMultihash h p = checkPayload h (Payload p)
+-- | Alias for API retro-compatibility
+checkWeakMultihash' :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
+                   => s -> bs -> Bool
+checkWeakMultihash' h p = checkPayload' h (Payload p)

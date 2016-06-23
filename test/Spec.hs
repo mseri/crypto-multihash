@@ -2,6 +2,7 @@
 
 import Control.Monad (zipWithM)
 import Crypto.Multihash
+import Crypto.Multihash.Weak (weakMultihash, checkWeakMultihash)
 import Data.ByteString (ByteString, pack)
 import Test.Hspec
 import Text.Printf (printf)
@@ -15,23 +16,26 @@ failTestString = "test1"
 main :: IO ()
 main = hspec $ do
   testMHEncoding SHA1 h1
-  hashChecker SHA1 h1
+  hashChecker checkMultihash SHA1 h1
   testMHEncoding SHA256 h2
-  hashChecker SHA256 h2
+  hashChecker checkMultihash SHA256 h2
   testMHEncoding SHA512 h3
-  hashChecker SHA512 h3
+  hashChecker checkMultihash SHA512 h3
   testMHEncoding SHA3_512 h4
-  hashChecker SHA3_512 h4
+  hashChecker checkMultihash SHA3_512 h4
   testMHEncoding SHA3_384 h5
-  hashChecker SHA3_384 h5
+  hashChecker checkMultihash SHA3_384 h5
   testMHEncoding SHA3_256 h6
-  hashChecker SHA3_256 h6
+  hashChecker checkMultihash SHA3_256 h6
   testMHEncoding SHA3_224 h7
-  hashChecker SHA3_224 h7
+  hashChecker checkMultihash SHA3_224 h7
   testMHEncoding Blake2b_512 h8
-  hashChecker Blake2b_512 h8
+  hashChecker checkMultihash Blake2b_512 h8
   testMHEncoding Blake2s_256 h9
-  hashChecker Blake2s_256 h9
+  hashChecker checkMultihash Blake2s_256 h9
+
+  traverse (uncurry testWMHEncoding) $ zip weakAlgos h
+  traverse (uncurry (hashChecker checkWeakMultihash)) $ zip weakAlgos h
 
   describe ("Fails correctly when") $ do
     it "checking a truncated multihash" $
@@ -52,26 +56,42 @@ main = hspec $ do
             encode' Base58 m `shouldBe` sm58
           it "returns the correct Base64 hash" $ 
             encode' Base64 m `shouldBe` sm64
+
+    testWMHEncoding :: ByteString 
+                       -> (ByteString, ByteString, ByteString) -> SpecWith ()
+    testWMHEncoding alg (sm16, sm58, sm64) = 
+        let m = weakMultihash alg testString in do
+        describe (printf "Encoding %s multihash" (show alg)) $ do
+          it "returns the correct Base16 hash" $ 
+            encode' Base16 m `shouldBe` sm16
+          it "returns the correct Base58 hash" $ 
+            encode' Base58 m `shouldBe` sm58
+          it "returns the correct Base64 hash" $ 
+            encode' Base64 m `shouldBe` sm64
     
-    hashChecker :: (HashAlgorithm a, Codable a, Show a) => a 
-                   -> (ByteString, ByteString, ByteString) -> SpecWith ()
-    hashChecker alg (e16, e58, e64) = do
-      describe (printf "Using checkMultihash on %s hashes" (show alg)) $ do
+    -- hashChecker :: (HashAlgorithm a, Codable a, Show a) => a 
+    --                -> (ByteString, ByteString, ByteString) -> SpecWith ()
+    hashChecker checker alg (e16, e58, e64) = do
+      describe (printf "Using checkPayload on %s hashes" (show alg)) $ do
         it "checks correctly Base16 hashes"  $
-          checkMultihash e16 testString `shouldBe` Right True
+          checker e16 testString `shouldBe` Right True
         it "fails correctly on Base16 hashes" $
-          checkMultihash e16 failTestString `shouldBe` Right False
+          checker e16 failTestString `shouldBe` Right False
         it "checks correctly Base58 hashes" $
-          checkMultihash e58 testString `shouldBe` Right True
+          checker e58 testString `shouldBe` Right True
         it "fails correctly on Base58 hashes" $
-          checkMultihash e58 failTestString `shouldBe` Right False
+          checker e58 failTestString `shouldBe` Right False
         it "checks correctly Base64 hashes" $
-          checkMultihash e64 testString `shouldBe` Right True
+          checker e64 testString `shouldBe` Right True
         it "fails correctly on Base64 hashes" $
-          checkMultihash e64 failTestString `shouldBe` Right False
+          checker e64 failTestString `shouldBe` Right False
+
+    weakAlgos = [ "sha1", "sha256", "sha512", "sha3-512" 
+                , "sha3-384", "sha3-256", "sha3-224"
+                , "blake2b-512", "blake2s-256" ]
 
     -- array of triples of hashes of the string "test"
-    (h1:h2:h3:h4:h5:h6:h7:h8:h9:[]) = 
+    h@(h1:h2:h3:h4:h5:h6:h7:h8:h9:[]) = 
       [
         ( "1114a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
         , "5dt9CqvXK9qs7vazf7k7ZRqe28VPTg"
