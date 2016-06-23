@@ -4,6 +4,8 @@ module Crypto.Multihash.Internal.Types where
 import Crypto.Hash (Digest)
 import Crypto.Hash.Algorithms
 import Data.ByteArray (ByteArrayAccess)
+import qualified Data.ByteArray as BA
+import qualified Data.ByteArray.Encoding as BE
 import Data.ByteString (ByteString)
 import Data.String (IsString(..))
 import Data.String.Conversions
@@ -14,7 +16,7 @@ data Base = Base2   -- ^ Binary form
           | Base32  -- ^ Not yet implemented. Waiting for <https://github.com/jbenet/multihash/issues/31 this issue to resolve>
           | Base58  -- ^ Bitcoin base58 encoding
           | Base64  -- ^ Base64 encoding
-          deriving (Show, Eq)
+          deriving (Eq, Show)
 
 -- | Multihash Digest container
 data MultihashDigest a = MultihashDigest
@@ -23,14 +25,20 @@ data MultihashDigest a = MultihashDigest
   , getDigest :: Digest a -- ^ binary digest data
   } deriving (Eq)
 
--- | 'Codable' hash algorithms are the algorithms supported for multihashing
-class Codable a where
-  -- | Returns the first byte for the head of the multihash digest
-  toCode :: a -> Int
+data WeakMultihashDigest = WeakMultihashDigest
+  { getAlgorithmW :: Int           -- ^ hash algorithm encoded as int
+  , getLengthW    :: Int           -- ^ hash lenght
+  , getDigestW    :: ByteString    -- ^ binary digest data
+  } deriving (Eq)
 
 -- | Newtype to allow the creation of a 'Checkable' typeclass for 
 --   all 'ByteArrayAccess' without recurring to UndecidableInstances
 newtype Payload bs =  Payload bs
+
+-- | 'Codable' hash algorithms are the algorithms supported for multihashing
+class Codable a where
+  -- | Returns the first byte for the head of the multihash digest
+  toCode :: a -> Int
 
 class Encodable a where
   -- | Safe encoder for 'Encodable'.
@@ -80,10 +88,14 @@ instance Codable Blake2s_256 where
 -- fromCode 0x19 = Keccak_512
 
 instance Show (MultihashDigest a) where
-    show (MultihashDigest _ _ d) = show d
+  show (MultihashDigest _ _ d) = show d
 
+instance Show WeakMultihashDigest where
+  -- the error here should never happen
+  show (WeakMultihashDigest _ _ d) = map (toEnum . fromIntegral) 
+                                         (BA.unpack $ (BE.convertToBase BE.Base16 d :: ByteString))
 
 eitherToErr :: Either String b -> b
 eitherToErr v = case v of
   Right val -> val
-  Left err -> error err
+  Left  err -> error err
