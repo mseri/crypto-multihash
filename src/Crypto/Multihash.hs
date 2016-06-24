@@ -62,7 +62,6 @@ import Data.List (elemIndex)
 import Data.String (IsString(..))
 import Data.String.Conversions
 import Data.Word (Word8)
-import Text.Printf (printf)
 
 -------------------------------------------------------------------------------
 import Crypto.Multihash.Internal.Types
@@ -86,7 +85,7 @@ instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
         d <- fullDigestUnpacked
         return $ fromString $ map (toEnum . fromIntegral) d
       else 
-        Left $ printf "Corrupted MultihashDigest: invalid length"
+        Left "Corrupted MultihashDigest: invalid length"
 
     where
 

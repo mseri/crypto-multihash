@@ -6,16 +6,20 @@ import qualified Data.ByteArray as BA
 import qualified Data.ByteArray.Encoding as BE
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base58 as B58
+import Data.Word (Word8)
 
 -------------------------------------------------------------------------------
 import Crypto.Multihash.Internal.Types
 -------------------------------------------------------------------------------
 
-
 -- | Converts a maybe type to an either type
 maybeToEither :: l -> Maybe r -> Either l r
 maybeToEither _ (Just res) = Right res
 maybeToEither err _        = Left err
+
+hashCodes :: [Word8]
+hashCodes = map fromIntegral
+                ([0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x40, 0x41]::[Int])
 
 -- | Convert a 'BS.ByteString' from a 'Base' into a 'BS.ByteString' in 'Base2'.
 convertFromBase :: Base -> BS.ByteString -> Either String BS.ByteString

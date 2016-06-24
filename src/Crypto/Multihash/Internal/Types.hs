@@ -19,6 +19,29 @@ class Codable a where
   -- | Returns the first byte for the head of the multihash digest
   toCode :: a -> Int
 
+instance Codable SHA1 where
+  toCode SHA1 = 0x11
+instance Codable SHA256 where
+  toCode SHA256 = 0x12
+instance Codable SHA512 where
+  toCode SHA512 = 0x13
+instance Codable SHA3_512 where
+  toCode SHA3_512 = 0x14
+instance Codable SHA3_384 where
+  toCode SHA3_384 = 0x15
+instance Codable SHA3_256 where
+  toCode SHA3_256 = 0x16
+instance Codable SHA3_224 where
+  toCode SHA3_224 = 0x17
+instance Codable Blake2b_512 where
+  toCode Blake2b_512 = 0x40
+instance Codable Blake2s_256 where
+  toCode Blake2s_256 = 0x41
+
+-- TODO: add shake-128/256 to Codable. Probably
+-- fromCode 0x18 = Keccak_256
+-- fromCode 0x19 = Keccak_512
+
 class Encodable a where
   -- | Safe encoder for 'Encodable'.
   encode :: IsString s => Base -> a -> Either String s
@@ -42,29 +65,6 @@ class Checkable b where
   --   Throws on encoding/decoding errors instead of returning an 'Either' type.
   checkPayload' :: (IsString s, ConvertibleStrings s ByteString) => s -> b -> Bool
   checkPayload' encoded payload = eitherToErr $ checkPayload encoded payload
-
-instance Codable SHA1 where
-  toCode SHA1 = 0x11
-instance Codable SHA256 where
-  toCode SHA256 = 0x12
-instance Codable SHA512 where
-  toCode SHA512 = 0x13
-instance Codable SHA3_512 where
-  toCode SHA3_512 = 0x14
-instance Codable SHA3_384 where
-  toCode SHA3_384 = 0x15
-instance Codable SHA3_256 where
-  toCode SHA3_256 = 0x16
-instance Codable SHA3_224 where
-  toCode SHA3_224 = 0x17
-instance Codable Blake2b_512 where
-  toCode Blake2b_512 = 0x40
-instance Codable Blake2s_256 where
-  toCode Blake2s_256 = 0x41
-
--- TODO: add shake-128/256 to Codable. Probably
--- fromCode 0x18 = Keccak_256
--- fromCode 0x19 = Keccak_512
 
 eitherToErr :: Either String b -> b
 eitherToErr v = case v of
