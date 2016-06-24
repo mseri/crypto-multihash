@@ -43,24 +43,23 @@ main = do
     
     let h = encode' Base58 m :: ByteString
     -- You can check that a multihash corresponds to some data `v`
-    -- but you need to wrap the data in the newtype `Payload`
-    checkPayload h (Payload v)
+    checkMultihash h v
     -- Right True
-
+    
     -- Or if you have a Multihash to compare you can use it
     check h m
     -- Right True
 
     -- There is also an unsafe version, as for encode
     -- note that sometimes you will need to specify the string types
-    checkPayload' ("whatever"::String) (Payload v)
+    checkMultihash' ("whatever"::String) v
     -- *** Exception: Unable to infer an encoding
-    checkPayload' ("Eiwhatever"::ByteString) (Payload v)
+    checkMultihash' ("Eiwhatever"::ByteString) v
     -- *** Exception: base64: input: invalid length
     check' ("EiCfhtCBiEx9ZZov6qDFWtAVo79PGysLgizRXWwVsPA1CA=="::ByteString) m
     -- False
 
-    checkPayload' h (Payload v)
+    checkMultihash' h v
     -- True
     check' h m
     -- True
