@@ -42,6 +42,15 @@ getBase h
       | otherwise = Left "Unable to infer an encoding"
       where startWiths h = any (`BS.isPrefixOf` h)
 
+encoder :: ByteArrayAccess a => Base -> a -> Either String BA.Bytes
+encoder base bs = case base of
+            Base2  -> return $ BA.convert bs
+            Base16 -> return $ BE.convertToBase BE.Base16 bs
+            Base32 -> Left "Base32 encoder not implemented"
+            Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet 
+                                                             (BA.convert bs :: BS.ByteString)
+            Base64 -> return $ BE.convertToBase BE.Base64 bs
+
 -- | Compares the lenght of the encoded 'MultihashDigest' with the encoded hash length.
 --   Returns 'True' if the lengths are matching.
 badLength :: ByteArrayAccess bs => bs -> Bool

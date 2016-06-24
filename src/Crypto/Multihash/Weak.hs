@@ -16,15 +16,13 @@ module Crypto.Multihash.Weak
   , checkWeakMultihash'
   ) where
 
---import Crypto.Hash (Digest, hash, hashlazy)
+import Crypto.Hash (Digest, hashWith, hashlazy)
 import qualified Crypto.Hash.Algorithms as A
 import Data.ByteArray (ByteArrayAccess, Bytes)
 import qualified Data.ByteArray as BA
-import qualified Data.ByteArray.Encoding as BE
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Base58 as B58
 import Data.List (elemIndex)
 import Data.String (IsString(..))
 import Data.String.Conversions
@@ -69,8 +67,8 @@ instance Codable HashAlgo where
   toCode (S3_384 A.SHA3_384) = 0x15
   toCode (S3_256 A.SHA3_256) = 0x16
   toCode (S3_224 A.SHA3_224) = 0x17
-  toCode (B2s A.Blake2s_256) = 0x40
-  toCode (B2b A.Blake2b_512) = 0x41
+  toCode (B2b A.Blake2b_512) = 0x40
+  toCode (B2s A.Blake2s_256) = 0x41
 
 -- | Weak Multihash Digest container
 data WeakMultihashDigest = WeakMultihashDigest
@@ -80,9 +78,8 @@ data WeakMultihashDigest = WeakMultihashDigest
   } deriving (Eq)
 
 instance Show WeakMultihashDigest where
-  -- the error here should never happen
-  show (WeakMultihashDigest _ _ d) = map (toEnum . fromIntegral) 
-                                         (BA.unpack $ (BE.convertToBase BE.Base16 d :: ByteString))
+  -- an error here should never happen
+  show m = encode' Base58 m
 
 allowedAlgos :: [(ByteString, HashAlgo)]
 allowedAlgos  = [ ("sha1", S1 A.SHA1) 
@@ -95,20 +92,45 @@ allowedAlgos  = [ ("sha1", S1 A.SHA1)
                 , ("blake2b-512", B2b A.Blake2b_512)
                 , ("blake2s-256", B2s A.Blake2s_256) ]
 
-weakMultihash :: (ConvertibleStrings s BS.ByteString, ByteArrayAccess bs) 
-                 => s -> bs -> WeakMultihashDigest
-weakMultihash = undefined
-weakMultihashlazy :: ConvertibleStrings s BS.ByteString 
-                     => s -> BL.ByteString -> WeakMultihashDigest
-weakMultihashlazy = undefined
+weakMultihash :: ByteArrayAccess bs
+                 => ByteString -> bs -> Either String WeakMultihashDigest
+weakMultihash alg p = do
+  alg' <- maybeToEither "Unknown algorithm" $ lookup (convertString alg) allowedAlgos
+  let h = case alg' of
+            S1 a     -> BA.convert $ hashWith a p
+            S256 a   -> BA.convert $ hashWith a p
+            S512 a   -> BA.convert $ hashWith a p
+            S3_512 a -> BA.convert $ hashWith a p
+            S3_384 a -> BA.convert $ hashWith a p
+            S3_256 a -> BA.convert $ hashWith a p
+            S3_224 a -> BA.convert $ hashWith a p
+            B2b a    -> BA.convert $ hashWith a p
+            B2s a    -> BA.convert $ hashWith a p
+  return $ WeakMultihashDigest alg' (BA.length h) h
 
-toWeakMultihash :: ConvertibleStrings s BS.ByteString 
-                     => s -> Either String WeakMultihashDigest
-toWeakMultihash bs = 
-  let bs' = convertString bs
-  in do
-    base <- getBase bs'
-    h <- convertFromBase base bs'
+-- | Run the 'hash' function but takes an explicit hash algorithm parameter
+hashlazyWith :: A.HashAlgorithm alg => alg -> BL.ByteString -> Digest alg
+hashlazyWith _ = hashlazy
+
+weakMultihashlazy :: ByteString -> BL.ByteString -> Either String WeakMultihashDigest
+weakMultihashlazy alg p = do
+  alg' <- maybeToEither "Unknown algorithm" $ lookup alg allowedAlgos
+  let h = case alg' of
+            S1 a     -> BA.convert $ hashlazyWith a p
+            S256 a   -> BA.convert $ hashlazyWith a p
+            S512 a   -> BA.convert $ hashlazyWith a p
+            S3_512 a -> BA.convert $ hashlazyWith a p
+            S3_384 a -> BA.convert $ hashlazyWith a p
+            S3_256 a -> BA.convert $ hashlazyWith a p
+            S3_224 a -> BA.convert $ hashlazyWith a p
+            B2b a    -> BA.convert $ hashlazyWith a p
+            B2s a    -> BA.convert $ hashlazyWith a p
+  return $ WeakMultihashDigest alg' (BA.length h) h
+
+toWeakMultihash :: BS.ByteString  -> Either String WeakMultihashDigest
+toWeakMultihash bs = do
+    base <- getBase bs
+    h <- convertFromBase base bs
     if badLength h 
       then 
         Left "Corrupted MultihasDigest: invalid length"
@@ -140,18 +162,9 @@ instance Encodable WeakMultihashDigest where
     where
       fullDigestUnpacked :: Either String [Word8]
       fullDigestUnpacked = do
-        d <- encoder fullDigest
+        d <- encoder base fullDigest
         return $ BA.unpack d
-        where 
-          encoder :: ByteArrayAccess a => a -> Either String Bytes
-          encoder bs = case base of
-                      Base2  -> return $ BA.convert bs
-                      Base16 -> return $ BE.convertToBase BE.Base16 bs
-                      Base32 -> Left "Base32 encoder not implemented"
-                      Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet 
-                                                                       (BA.convert bs :: BS.ByteString)
-                      Base64 -> return $ BE.convertToBase BE.Base64 bs
-
+      
       fullDigest :: Bytes
       fullDigest = BA.pack hd `BA.append` md
         where
@@ -169,7 +182,10 @@ instance Encodable WeakMultihashDigest where
 newtype Payload bs =  Payload bs
 
 instance ByteArrayAccess bs => Checkable (Payload bs) where
-  checkPayload hash_ (Payload p) = undefined
+  checkPayload hash_ (Payload p) = let hash' = convertString hash_ in do
+    m <- toWeakMultihash hash'
+    wmh <- weakMultihash (convertString $ show $ getAlgorithm m) p
+    check hash' wmh
 
 -- | Alias for API retro-compatibility
 checkWeakMultihash :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)

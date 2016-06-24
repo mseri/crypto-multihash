@@ -2,10 +2,12 @@
 
 import Control.Monad (zipWithM)
 import Crypto.Multihash
-import Crypto.Multihash.Weak (weakMultihash, checkWeakMultihash)
+import Crypto.Multihash.Weak (weakMultihash, checkWeakMultihash, toWeakMultihash)
 import Data.ByteString (ByteString, pack)
 import Test.Hspec
 import Text.Printf (printf)
+
+-- TODO: test toWeakMultihash
 
 testString :: ByteString
 testString = "test"
@@ -15,41 +17,51 @@ failTestString = "test1"
 
 main :: IO ()
 main = hspec $ do
-  testMHEncoding SHA1 h1
-  hashChecker checkMultihash SHA1 h1
-  testMHEncoding SHA256 h2
-  hashChecker checkMultihash SHA256 h2
-  testMHEncoding SHA512 h3
-  hashChecker checkMultihash SHA512 h3
-  testMHEncoding SHA3_512 h4
-  hashChecker checkMultihash SHA3_512 h4
-  testMHEncoding SHA3_384 h5
-  hashChecker checkMultihash SHA3_384 h5
-  testMHEncoding SHA3_256 h6
-  hashChecker checkMultihash SHA3_256 h6
-  testMHEncoding SHA3_224 h7
-  hashChecker checkMultihash SHA3_224 h7
-  testMHEncoding Blake2b_512 h8
-  hashChecker checkMultihash Blake2b_512 h8
-  testMHEncoding Blake2s_256 h9
-  hashChecker checkMultihash Blake2s_256 h9
+  mhEncoding SHA1 h1
+  mhCheck mh checkMultihash SHA1 h1
+  mhEncoding SHA256 h2
+  mhCheck mh checkMultihash SHA256 h2
+  mhEncoding SHA512 h3
+  mhCheck mh checkMultihash SHA512 h3
+  mhEncoding SHA3_512 h4
+  mhCheck mh checkMultihash SHA3_512 h4
+  mhEncoding SHA3_384 h5
+  mhCheck mh checkMultihash SHA3_384 h5
+  mhEncoding SHA3_256 h6
+  mhCheck mh checkMultihash SHA3_256 h6
+  mhEncoding SHA3_224 h7
+  mhCheck mh checkMultihash SHA3_224 h7
+  mhEncoding Blake2b_512 h8
+  mhCheck mh checkMultihash Blake2b_512 h8
+  mhEncoding Blake2s_256 h9
+  mhCheck mh checkMultihash Blake2s_256 h9
 
-  traverse (uncurry testWMHEncoding) $ zip weakAlgos h
-  traverse (uncurry (hashChecker checkWeakMultihash)) $ zip weakAlgos h
+  traverse (uncurry wmhEncoding) $ zip weakAlgos h
+  traverse (uncurry (mhCheck ("Weak Multihash"::String) checkWeakMultihash)) $ zip weakAlgos h
 
-  describe ("Fails correctly when") $ do
+  describe "Multihash: fails correctly when" $ do
     it "checking a truncated multihash" $
       checkMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
     it "checking an invalid multihash" $
       checkMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
         `shouldBe` Left "Unable to infer an encoding"
+
+  describe "Weak Multihash: fails correctly when" $ do
+    it "checking a truncated multihash" $
+      checkWeakMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
+        `shouldBe` Left "Corrupted MultihasDigest: invalid length"
+    it "checking an invalid multihash" $
+      checkWeakMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
+        `shouldBe` Left "Unable to infer an encoding"
   where
-    testMHEncoding :: (HashAlgorithm a, Codable a, Show a) => a 
+    mh = "Multihash"::String
+
+    mhEncoding :: (HashAlgorithm a, Codable a, Show a) => a 
                       -> (ByteString, ByteString, ByteString) -> SpecWith ()
-    testMHEncoding alg (sm16, sm58, sm64) = 
-        let m = multihash alg testString in do
-        describe (printf "Encoding %s multihash" (show alg)) $ do
+    mhEncoding alg (sm16, sm58, sm64) = 
+        let m = multihash alg testString in
+        describe (printf "Multihash: encoding %s multihash" (show alg)) $ do
           it "returns the correct Base16 hash" $ 
             encode' Base16 m `shouldBe` sm16
           it "returns the correct Base58 hash" $ 
@@ -57,22 +69,32 @@ main = hspec $ do
           it "returns the correct Base64 hash" $ 
             encode' Base64 m `shouldBe` sm64
 
-    testWMHEncoding :: ByteString 
+    wmhEncoding :: ByteString 
                        -> (ByteString, ByteString, ByteString) -> SpecWith ()
-    testWMHEncoding alg (sm16, sm58, sm64) = 
-        let m = weakMultihash alg testString in do
-        describe (printf "Encoding %s multihash" (show alg)) $ do
+    wmhEncoding alg (sm16, sm58, sm64) = 
+        let m = case weakMultihash alg testString of 
+                  Right val -> val
+                  Left  err -> error err
+        in do
+        describe (printf "Weak Multihash: encoding %s multihash" (show alg)) $ do
           it "returns the correct Base16 hash" $ 
             encode' Base16 m `shouldBe` sm16
           it "returns the correct Base58 hash" $ 
             encode' Base58 m `shouldBe` sm58
           it "returns the correct Base64 hash" $ 
             encode' Base64 m `shouldBe` sm64
+        describe (printf "Weak Multihash: decoding %s multihash" (show alg)) $ do
+          it "imports the correct hash from Base16" $ 
+            toWeakMultihash sm16 `shouldBe` Right m
+          it "imports the correct hash from Base58" $ 
+            toWeakMultihash sm58 `shouldBe` Right m
+          it "imports the correct hash from Base64" $ 
+            toWeakMultihash sm64 `shouldBe` Right m
     
     -- hashChecker :: (HashAlgorithm a, Codable a, Show a) => a 
     --                -> (ByteString, ByteString, ByteString) -> SpecWith ()
-    hashChecker checker alg (e16, e58, e64) = do
-      describe (printf "Using checkPayload on %s hashes" (show alg)) $ do
+    mhCheck t checker alg (e16, e58, e64) =
+      describe (printf "%s: using checkPayload on %s hashes" t (show alg)) $ do
         it "checks correctly Base16 hashes"  $
           checker e16 testString `shouldBe` Right True
         it "fails correctly on Base16 hashes" $
@@ -91,7 +113,7 @@ main = hspec $ do
                 , "blake2b-512", "blake2s-256" ]
 
     -- array of triples of hashes of the string "test"
-    h@(h1:h2:h3:h4:h5:h6:h7:h8:h9:[]) = 
+    h@[h1, h2, h3, h4, h5, h6, h7, h8, h9] = 
       [
         ( "1114a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
         , "5dt9CqvXK9qs7vazf7k7ZRqe28VPTg"

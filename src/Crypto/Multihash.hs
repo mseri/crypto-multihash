@@ -54,10 +54,8 @@ import Crypto.Hash (Digest, hash, hashlazy)
 import Crypto.Hash.Algorithms
 import Data.ByteArray (ByteArrayAccess, Bytes)
 import qualified Data.ByteArray as BA
-import qualified Data.ByteArray.Encoding as BE
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Base58 as B58
 import Data.List (elemIndex)
 import Data.String (IsString(..))
 import Data.String.Conversions
@@ -75,8 +73,8 @@ data MultihashDigest a = MultihashDigest
   , getDigest :: Digest a -- ^ binary digest data
   } deriving (Eq)
 
-instance Show (MultihashDigest a) where
-  show (MultihashDigest _ _ d) = show d
+instance (HashAlgorithm a, Codable a) => Show (MultihashDigest a) where
+  show m = encode' Base58 m
 
 instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
   encode base (MultihashDigest alg len md) = 
@@ -88,20 +86,10 @@ instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
         Left "Corrupted MultihashDigest: invalid length"
 
     where
-
       fullDigestUnpacked :: Either String [Word8]
       fullDigestUnpacked = do
-        d <- encoder fullDigest
+        d <- encoder base fullDigest
         return $ BA.unpack d
-        where 
-          encoder :: ByteArrayAccess a => a -> Either String Bytes
-          encoder bs = case base of
-                      Base2  -> return $ BA.convert bs
-                      Base16 -> return $ BE.convertToBase BE.Base16 bs
-                      Base32 -> Left "Base32 encoder not implemented"
-                      Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet 
-                                                                       (BA.convert bs :: BS.ByteString)
-                      Base64 -> return $ BE.convertToBase BE.Base64 bs
 
       fullDigest :: Bytes
       fullDigest = BA.pack [dHead, dSize] `BA.append` dTail
@@ -124,9 +112,9 @@ newtype Payload bs =  Payload bs
 
 instance ByteArrayAccess bs => Checkable (Payload bs) where
   -- checkPayload :: (IsString s, ByteArrayAccess bs) => s -> bs -> Either String Bool
-  checkPayload hash_ (Payload p) = do
-    base <- getBase (convertString hash_)
-    mhd <- convertFromBase base (convertString hash_)
+  checkPayload hash_ (Payload p) = let hash' = convertString hash_ in do
+    base <- getBase hash'
+    mhd <- convertFromBase base hash'
     -- Hacky... think to a different approach
     if badLength mhd 
       then 
