@@ -68,13 +68,13 @@ import Crypto.Multihash.Internal
 
 -- | Multihash Digest container
 data MultihashDigest a = MultihashDigest
-  { getAlgorithm :: a     -- ^ hash algorithm
-  , getLength :: Int      -- ^ hash lenght
-  , getDigest :: Digest a -- ^ binary digest data
+  { _getAlgorithm :: a     -- ^ hash algorithm
+  , _getLength :: Int      -- ^ hash lenght
+  , _getDigest :: Digest a -- ^ binary digest data
   } deriving (Eq)
 
 instance (HashAlgorithm a, Codable a) => Show (MultihashDigest a) where
-  show m = encode' Base58 m
+  show = encode' Base58
 
 instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
   encode base (MultihashDigest alg len md) = 
@@ -108,7 +108,7 @@ instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
 
 -- | Newtype to allow the creation of a 'Checkable' typeclass for 
 --   all 'ByteArrayAccess' without recurring to UndecidableInstances
-newtype Payload bs =  Payload bs
+newtype Payload bs = Payload bs
 
 instance ByteArrayAccess bs => Checkable (Payload bs) where
   -- checkPayload :: (IsString s, ByteArrayAccess bs) => s -> bs -> Either String Bool
@@ -123,6 +123,8 @@ instance ByteArrayAccess bs => Checkable (Payload bs) where
         m <- getBinaryEncodedMultihash mhd p
         return (m == mhd)
 
+-------------------------------------------------------------------------------
+
 -- | Helper to multihash a lazy 'BL.ByteString' using a supported hash algorithm.
 --   Uses 'Crypto.Hash.hashlazy' for hashing.
 multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
@@ -135,14 +137,19 @@ multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> Mult
 multihash alg bs = let digest = hash bs
                    in MultihashDigest alg (BA.length digest) digest
 
--- | Alias for API retro-compatibility
+-------------------------------------------------------------------------------
+
+-- | 'checkPayload' wrapper for API retro-compatibility
 checkMultihash :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
                   => s -> bs -> Either String Bool
 checkMultihash h p = checkPayload h (Payload p)
--- | Alias for API retro-compatibility
+
+-- | Unsafe 'checkPayload' wrapper for API retro-compatibility
 checkMultihash' :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
                    => s -> bs -> Bool
 checkMultihash' h p = checkPayload' h (Payload p)
+
+-------------------------------------------------------------------------------
 
 -- | Infer the hash function from an unencoded 'BS.BinaryString' representing 
 --   a 'MultihashDigest' and uses it to binary encode the data in a 'MultihashDigest'.

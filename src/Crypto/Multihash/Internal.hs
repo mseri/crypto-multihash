@@ -12,11 +12,12 @@ import Data.Word (Word8)
 import Crypto.Multihash.Internal.Types
 -------------------------------------------------------------------------------
 
--- | Converts a maybe type to an either type
+-- | Convert a maybe type to an either type
 maybeToEither :: l -> Maybe r -> Either l r
 maybeToEither _ (Just res) = Right res
 maybeToEither err _        = Left err
 
+-- | Codes corresponding to the various hash algorithms
 hashCodes :: [Word8]
 hashCodes = map fromIntegral
                 ([0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x40, 0x41]::[Int])
@@ -42,6 +43,7 @@ getBase h
       | otherwise = Left "Unable to infer an encoding"
       where startWiths h = any (`BS.isPrefixOf` h)
 
+-- | Encode the binary data using a given 'Base'.
 encoder :: ByteArrayAccess a => Base -> a -> Either String BA.Bytes
 encoder base bs = case base of
             Base2  -> return $ BA.convert bs
@@ -51,8 +53,8 @@ encoder base bs = case base of
                                                              (BA.convert bs :: BS.ByteString)
             Base64 -> return $ BE.convertToBase BE.Base64 bs
 
--- | Compares the lenght of the encoded 'MultihashDigest' with the encoded hash length.
---   Returns 'True' if the lengths are matching.
+-- | Compare the lenght of the encoded 'MultihashDigest' with the encoded hash length.
+--   Return 'True' if the lengths are matching.
 badLength :: ByteArrayAccess bs => bs -> Bool
 badLength mh = 
       case BA.length mh of

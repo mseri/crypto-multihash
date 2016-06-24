@@ -23,7 +23,7 @@ library
                      , Crypto.Multihash.Weak
   other-modules:       Crypto.Multihash.Internal
                      , Crypto.Multihash.Internal.Types
-  ghc-options:         -Wall -fwarn-tabs -fno-warn-name-shadowing -fwarn-pointless-pragmas
+  ghc-options:         -Wall -fwarn-tabs -fno-warn-name-shadowing
   build-depends:       base >= 4.7 && < 5
                      , base58-bytestring
                      , bytestring

@@ -7,8 +7,6 @@ import Data.ByteString (ByteString, pack)
 import Test.Hspec
 import Text.Printf (printf)
 
--- TODO: test toWeakMultihash
-
 testString :: ByteString
 testString = "test"
 
@@ -36,8 +34,10 @@ main = hspec $ do
   mhEncoding Blake2s_256 h9
   mhCheck mh checkMultihash Blake2s_256 h9
 
-  traverse (uncurry wmhEncoding) $ zip weakAlgos h
-  traverse (uncurry (mhCheck ("Weak Multihash"::String) checkWeakMultihash)) $ zip weakAlgos h
+  traverse (uncurry wmhEncoding) 
+           (zip weakAlgos h)
+  traverse (uncurry (mhCheck wmh checkWeakMultihash))
+           (zip weakAlgos h)
 
   describe "Multihash: fails correctly when" $ do
     it "checking a truncated multihash" $
@@ -56,6 +56,7 @@ main = hspec $ do
         `shouldBe` Left "Unable to infer an encoding"
   where
     mh = "Multihash"::String
+    wmh = "Weak Multihash"::String
 
     mhEncoding :: (HashAlgorithm a, Codable a, Show a) => a 
                       -> (ByteString, ByteString, ByteString) -> SpecWith ()
@@ -83,6 +84,7 @@ main = hspec $ do
             encode' Base58 m `shouldBe` sm58
           it "returns the correct Base64 hash" $ 
             encode' Base64 m `shouldBe` sm64
+
         describe (printf "Weak Multihash: decoding %s multihash" (show alg)) $ do
           it "imports the correct hash from Base16" $ 
             toWeakMultihash sm16 `shouldBe` Right m

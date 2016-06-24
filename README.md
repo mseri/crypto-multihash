@@ -56,11 +56,13 @@ main = do
     check' ("EiCfhtCBiEx9ZZov6qDFWtAVo79PGysLgizRXWwVsPA1CA=="::ByteString) m
     -- False
 
-    checkPayload' h v
+    checkPayload' h (Payload v)
     -- True
     check' h m
     -- True
 ```
+
+The of `import Crypto.Multihash.Weak` is almost identical, but it additionally introduces the function `toWeakMultihash` that tries to import a string as a `WeakMultihashDigest`.
 
 # Test
 
@@ -92,9 +94,8 @@ To run tests: `stack test`
 
 # TODO
 
-- Use `length` in `checkMultihash` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)
-- ~~Improve documentation~~
+- Use the hash length in `checkPayload` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)
+- Improve documentation
 - Improve testing for for raised exceptions
-- Add multihash checker into the cli example
 - Implement `shake-128` and `shake-256` multihashes
 - Implement `Base32` encoding waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)
