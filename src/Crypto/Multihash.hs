@@ -30,8 +30,8 @@ module Crypto.Multihash
   , Base            (..)
   , Codable         (..)
   , Encodable       (..)
-  , Checkable       (..)
-  , Payload         (..)
+  --, Checkable       (..)
+  --, Payload         (..)
   -- * Multihash helpers
   , multihash
   , multihashlazy

@@ -34,8 +34,8 @@ module Crypto.Multihash.Weak
     WeakMultihashDigest
   , Base            (..)
   , Encodable       (..)
-  , Checkable       (..)
-  , Payload         (..)
+  --, Checkable       (..)
+  --, Payload         (..)
     -- * Weak Multihash Helpers
   , weakMultihash
   , weakMultihash'
