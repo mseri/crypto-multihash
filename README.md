@@ -81,7 +81,7 @@ echo -n test | stack exec mh -- somefile someotherfile
 or read data from the standard input 
 
 ```{.bash}
-echo -n test | stack exec mh -- -`
+echo -n test | stack exec mh -- -
 ```
 
 # Contribution
