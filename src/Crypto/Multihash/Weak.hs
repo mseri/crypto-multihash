@@ -242,12 +242,14 @@ toWeakMultihash bs = do
 
 -------------------------------------------------------------------------------
 
--- | 'checkPayload' wrapper for API retro-compatibility.
+-- | Safely check the correctness of an encoded 'Encodable' against the 
+--   corresponding data.
 checkWeakMultihash :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
                   => s -> bs -> Either String Bool
 checkWeakMultihash h p = checkPayload h (Payload p)
 
--- | Unsafe 'checkPayload' wrapper for API retro-compatibility.
+-- | Unsafe version of 'checkWeakMultihash'. 
+--   Throws on encoding/decoding errors instead of returning an 'Either' type.
 checkWeakMultihash' :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
                    => s -> bs -> Bool
 checkWeakMultihash' h p = checkPayload' h (Payload p)
