@@ -1,3 +1,10 @@
+-- |
+-- Module      : Crypto.Multihash.Internal.Types
+-- License     : BSD3
+-- Maintainer  : Marcello Seri <marcello.seri@gmail.com>
+-- Stability   : experimental
+-- Portability : unknown
+--
 {-# LANGUAGE FlexibleContexts #-}
 module Crypto.Multihash.Internal.Types where
 
@@ -16,7 +23,7 @@ data Base = Base2   -- ^ Binary form
 
 -- | 'Codable' hash algorithms are the algorithms supported for multihashing
 class Codable a where
-  -- | Returns the first byte for the head of the multihash digest
+  -- | Return the first byte for the head of the multihash digest
   toCode :: a -> Int
 
 instance Codable SHA1 where

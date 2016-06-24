@@ -21,7 +21,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
--- TODO: use length in checkMultihash to treat correctly truncated hashes
+-- TODO: use length in check* to treat correctly truncated hashes
 -- see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612
 
 module Crypto.Multihash

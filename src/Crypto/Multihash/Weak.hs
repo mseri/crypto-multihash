@@ -1,5 +1,33 @@
+-- |
+-- Module      : Crypto.Multihash.Weak
+-- License     : BSD3
+-- Maintainer  : Marcello Seri <marcello.seri@gmail.com>
+-- Stability   : experimental
+-- Portability : unknown
+--
+-- Multihash library built on top of haskell 'cryptonite' crypto package
+-- Multihash is a protocol for encoding the hash algorithm and digest length 
+-- at the start of the digest, see the official 
+-- <https://github.com/jbenet/multihash/ multihash poroposal github repo>.
+--
+-- The 'Crypto.Multihash.Weak' module contains a weaker implementation of the
+-- MultihashDigest type that allows to deserialize multihashes and to work with
+-- different algorithms at the same type. The API interface is almost identical
+-- to the one exposed by 'Crypto.Multihash'. The notable differences are:
+-- 
+--  - the hash algorithms is no longer a type 
+--  - the type returned by the multihash constructors is an 'Either' 
+--    (see 'weakMultihash' and 'weakMultihashlazy')
+--  - there is a function 'toWeakMultihash' to deserialise multihashes
+--
+-- For additional informations refer to the README.md or the
+-- <https://github.com/mseri/crypto-multihash gihub repository>.
+--
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
+
+-- TODO: use length in check* to treat correctly truncated hashes
+-- see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612
 
 module Crypto.Multihash.Weak 
   ( -- * Weak Multihash Types

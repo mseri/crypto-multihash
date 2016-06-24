@@ -1,3 +1,10 @@
+-- |
+-- Module      : Crypto.Multihash.Internal
+-- License     : BSD3
+-- Maintainer  : Marcello Seri <marcello.seri@gmail.com>
+-- Stability   : experimental
+-- Portability : unknown
+--
 {-# LANGUAGE OverloadedStrings #-}
 module Crypto.Multihash.Internal where
 
@@ -53,7 +60,7 @@ encoder base bs = case base of
                                                              (BA.convert bs :: BS.ByteString)
             Base64 -> return $ BE.convertToBase BE.Base64 bs
 
--- | Compare the lenght of the encoded 'MultihashDigest' with the encoded hash length.
+-- | Compare the lenght of the encoded multihash digest with the encoded hash length.
 --   Return 'True' if the lengths are matching.
 badLength :: ByteArrayAccess bs => bs -> Bool
 badLength mh = 

@@ -23,12 +23,16 @@ The `Base32` encoding is not yet supported due to discrepancy between the encodi
 -- in ghci `:set -XOverloadedStrings`
 {-# LANGUAGE OverloadedStrings #-}
 
+-- `:m +Crypto.Multihash`
 import Crypto.Multihash
 import Data.ByteString (ByteString)
 
 main = do
     let v = "test"::ByteString
     let m = multihash SHA256 v
+
+    -- If using the Weak module
+    -- let m' = weakMultihash "sha256" v
     
     putStrLn $ "Base16: " ++ (encode' Base16 m)
     -- You might need to specify the encoded string type
