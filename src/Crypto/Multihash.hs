@@ -21,10 +21,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
--- TODO: decide if it is better to move the MultihashDigest a and Payload a
--- here to remove the orphan istance warning
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 -- TODO: use length in checkMultihash to treat correctly truncated hashes
 -- see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612
 
@@ -54,7 +50,7 @@ module Crypto.Multihash
   , Blake2s_256(..)
   ) where
 
-import Crypto.Hash (hash, hashlazy)
+import Crypto.Hash (Digest, hash, hashlazy)
 import Crypto.Hash.Algorithms
 import Data.ByteArray (ByteArrayAccess, Bytes)
 import qualified Data.ByteArray as BA
@@ -73,18 +69,15 @@ import Crypto.Multihash.Internal.Types
 import Crypto.Multihash.Internal
 -------------------------------------------------------------------------------
 
--- | Helper to multihash a lazy 'BL.ByteString' using a supported hash algorithm.
---   Uses 'Crypto.Hash.hashlazy' for hashing.
-multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
-multihashlazy alg bs = let digest = hashlazy bs
-                       in MultihashDigest alg (BA.length digest) digest
+-- | Multihash Digest container
+data MultihashDigest a = MultihashDigest
+  { getAlgorithm :: a     -- ^ hash algorithm
+  , getLength :: Int      -- ^ hash lenght
+  , getDigest :: Digest a -- ^ binary digest data
+  } deriving (Eq)
 
--- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'BS.ByteString') using a 
---   supported hash algorithm. Uses 'Crypto.Hash.hash' for hashing.
-multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> MultihashDigest a
-multihash alg bs = let digest = hash bs
-                   in MultihashDigest alg (BA.length digest) digest
-
+instance Show (MultihashDigest a) where
+  show (MultihashDigest _ _ d) = show d
 
 instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
   encode base (MultihashDigest alg len md) = 
@@ -126,6 +119,9 @@ instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
     m <- encode base multihash_
     return (m == hash_')
 
+-- | Newtype to allow the creation of a 'Checkable' typeclass for 
+--   all 'ByteArrayAccess' without recurring to UndecidableInstances
+newtype Payload bs =  Payload bs
 
 instance ByteArrayAccess bs => Checkable (Payload bs) where
   -- checkPayload :: (IsString s, ByteArrayAccess bs) => s -> bs -> Either String Bool
@@ -139,6 +135,18 @@ instance ByteArrayAccess bs => Checkable (Payload bs) where
       else do
         m <- getBinaryEncodedMultihash mhd p
         return (m == mhd)
+
+-- | Helper to multihash a lazy 'BL.ByteString' using a supported hash algorithm.
+--   Uses 'Crypto.Hash.hashlazy' for hashing.
+multihashlazy :: (HashAlgorithm a, Codable a) => a -> BL.ByteString -> MultihashDigest a
+multihashlazy alg bs = let digest = hashlazy bs
+                       in MultihashDigest alg (BA.length digest) digest
+
+-- | Helper to multihash a 'ByteArrayAccess' (e.g. a 'BS.ByteString') using a 
+--   supported hash algorithm. Uses 'Crypto.Hash.hash' for hashing.
+multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> MultihashDigest a
+multihash alg bs = let digest = hash bs
+                   in MultihashDigest alg (BA.length digest) digest
 
 -- | Alias for API retro-compatibility
 checkMultihash :: (IsString s, ConvertibleStrings s BS.ByteString, ByteArrayAccess bs)
