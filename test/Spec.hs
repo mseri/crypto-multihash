@@ -7,6 +7,11 @@ import Data.ByteString (ByteString, pack)
 import Test.Hspec
 import Text.Printf (printf)
 
+-- TODO: 
+--   * use QuickCheck to test Multihash serializatio/deserializatio/check properties
+--     especially now that we infer the decoding for arbitrary truncations
+--   * test for valid and invalid truncated multihashes
+
 testString :: ByteString
 testString = "test"
 
@@ -40,20 +45,20 @@ main = hspec $ do
            (zip weakAlgos h)
 
   describe "Multihash: fails correctly when" $ do
-    it "checking a truncated multihash" $
+    it "checking an invalid truncated multihash" $
       checkMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
-    it "checking an invalid multihash" $
+    it "checking an invalid truncated multihash" $
       checkMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
-        `shouldBe` Left "Unable to infer an encoding"
+        `shouldBe` Left "Corrupted MultihasDigest: invalid length"
 
   describe "Weak Multihash: fails correctly when" $ do
-    it "checking a truncated multihash" $
+    it "checking an invalid truncated multihash" $
       checkWeakMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
-    it "checking an invalid multihash" $
+    it "checking an invalid truncated multihash" $
       checkWeakMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
-        `shouldBe` Left "Unable to infer an encoding"
+        `shouldBe` Left "Corrupted MultihasDigest: invalid length"
   where
     mh = "Multihash"::String
     wmh = "Weak Multihash"::String

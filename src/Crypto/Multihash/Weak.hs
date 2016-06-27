@@ -41,6 +41,8 @@ module Crypto.Multihash.Weak
   , weakMultihash'
   , weakMultihashlazy
   , weakMultihashlazy'
+  , truncatedWeakMultihash
+  , truncatedWeakMultihash'
   , toWeakMultihash
   , checkWeakMultihash
   , checkWeakMultihash'
@@ -211,6 +213,25 @@ weakMultihashlazy alg p = do
 -- | Unsafe equivalent of 'weakMultihashlazy'. Throws on creation errors.
 weakMultihashlazy' :: ByteString -> BL.ByteString -> WeakMultihashDigest
 weakMultihashlazy' alg p = eitherToErr $ weakMultihashlazy alg p
+
+-- | Helper to multihash a 'ByteArrayAccess' using a supported hash algorithm. 
+--   Uses 'Crypto.Hash.hash' for hashing and truncates the hash to the lenght 
+--   specified (must be positive and not longer than the digest length).
+truncatedWeakMultihash :: ByteArrayAccess bs 
+                       => Int -> ByteString -> bs -> Either String WeakMultihashDigest
+truncatedWeakMultihash len alg bs = do
+    WeakMultihashDigest alg' len' digest <- weakMultihash alg bs
+    if len <= 0 || len > len'
+      then Left "invalid truncated multihash lenght"
+      else Right $ WeakMultihashDigest alg' len (BA.take len digest)
+
+-- | Unsafe helper to multihash a 'ByteArrayAccess' using a supported hash algorithm. 
+--   Uses 'Crypto.Hash.hash' for hashing and truncates the hash to the lenght 
+--   specified (must be positive and not longer than the digest length, otherwise
+--   the function will throw an error).
+truncatedWeakMultihash' :: ByteArrayAccess bs 
+                       => Int -> ByteString -> bs -> WeakMultihashDigest
+truncatedWeakMultihash' len alg bs = eitherToErr $ truncatedWeakMultihash len alg bs
 
 -------------------------------------------------------------------------------
 

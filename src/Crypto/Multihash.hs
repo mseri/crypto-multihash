@@ -35,6 +35,8 @@ module Crypto.Multihash
   -- * Multihash helpers
   , multihash
   , multihashlazy
+  , truncatedMultihash
+  , truncatedMultihash'
   , checkMultihash
   , checkMultihash'
   -- * Re-exported types
@@ -78,12 +80,14 @@ instance (HashAlgorithm a, Codable a) => Show (MultihashDigest a) where
 
 instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
   encode base (MultihashDigest alg len md) = 
-    if len == BA.length md
-      then do
+    -- lenght can be shorter to allow truncated multihash
+    if len <=0 || len > BA.length md
+      then
+        Left "Corrupted MultihashDigest: invalid length"
+      else do
         d <- fullDigestUnpacked
         return $ fromString $ map (toEnum . fromIntegral) d
-      else 
-        Left "Corrupted MultihashDigest: invalid length"
+        
 
     where
       fullDigestUnpacked :: Either String [Word8]
@@ -99,7 +103,7 @@ instance (HashAlgorithm a, Codable a) => Encodable (MultihashDigest a) where
           dSize :: Word8
           dSize = fromIntegral len
           dTail :: Bytes
-          dTail = BA.convert md
+          dTail = BA.take len (BA.convert md)
 
   check hash_ multihash_ = let hash_' = convertString hash_ in do
     base <- getBase hash_'
@@ -137,6 +141,25 @@ multihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) => a -> bs -> Mult
 multihash alg bs = let digest = hash bs
                    in MultihashDigest alg (BA.length digest) digest
 
+
+-- | Helper to multihash a 'ByteArrayAccess' using a supported hash algorithm. 
+--   Uses 'Crypto.Hash.hash' for hashing and truncates the hash to the lenght 
+--   specified (must be positive and not longer than the digest length).
+truncatedMultihash :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) 
+                      => Int -> a -> bs -> Either String (MultihashDigest a)
+truncatedMultihash len alg bs = let digest = hash bs in 
+                  if len <= 0 || len > BA.length digest
+                    then Left "invalid truncated multihash lenght"
+                    else Right $ MultihashDigest alg len digest
+
+-- | Unsafe helper to multihash a 'ByteArrayAccess' using a supported hash algorithm. 
+--   Uses 'Crypto.Hash.hash' for hashing and truncates the hash to the lenght 
+--   specified (must be positive and not longer than the digest length, otherwise
+--   the function will throw an error).
+truncatedMultihash' :: (HashAlgorithm a, Codable a, ByteArrayAccess bs) 
+                      => Int -> a -> bs -> MultihashDigest a
+truncatedMultihash' len alg bs = eitherToErr $ truncatedMultihash len alg bs
+
 -------------------------------------------------------------------------------
 
 -- | Safely check the correctness of an encoded 'Encodable' against the 
@@ -157,7 +180,7 @@ checkMultihash' h p = checkPayload' h (Payload p)
 --   a 'MultihashDigest' and uses it to binary encode the data in a 'MultihashDigest'.
 getBinaryEncodedMultihash :: (ByteArrayAccess bs, IsString s) 
                              => BS.ByteString -> bs -> Either String s
-getBinaryEncodedMultihash mhd uh = let bitOne = head $ BA.unpack mhd in
+getBinaryEncodedMultihash mhd uh = 
   case elemIndex bitOne hashCodes of
     Just 0 -> rs SHA1 uh
     Just 1 -> rs SHA256 uh
@@ -171,7 +194,9 @@ getBinaryEncodedMultihash mhd uh = let bitOne = head $ BA.unpack mhd in
     Just _ -> Left "This should be impossible"
     Nothing -> Left "Impossible to infer the appropriate hash from the header"
   where 
-    rs alg = encode Base2 . multihash alg
+    [bitOne, bitTwo] = take 2 $ BA.unpack mhd
+    rs alg s = truncatedMultihash (fromIntegral bitTwo) alg s >>= encode Base2
+    
     hashCodes :: [Word8]
     hashCodes = map fromIntegral
                     ([0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x40, 0x41]::[Int])

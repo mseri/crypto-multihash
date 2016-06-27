@@ -13,6 +13,7 @@ import qualified Data.ByteArray as BA
 import qualified Data.ByteArray.Encoding as BE
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base58 as B58
+import Data.List (elemIndices)
 import Data.Word (Word8)
 
 -------------------------------------------------------------------------------
@@ -43,12 +44,36 @@ convertFromBase b bs = case b of
 -- | Infer the 'Base' encoding function from an encoded 'BS.BinaryString' representing 
 -- a 'MultihashDigest'.
 getBase :: BS.ByteString -> Either String Base
-getBase h
-      | startWiths h ["1114", "1220", "1340", "1440", "1530", "1620", "171c", "4040", "4120"] = Right Base16
-      | startWiths h ["5d", "Qm", "8V", "8t", "G9", "W1", "5d", "S2", "2U"] = Right Base58
-      | startWiths h ["ER", "Ei", "E0", "FE", "FT", "Fi", "Fx", "QE", "QS"] = Right Base64
-      | otherwise = Left "Unable to infer an encoding"
-      where startWiths h = any (`BS.isPrefixOf` h)
+getBase h = if len == 0 
+  then 
+    Left "Unable to infer an encoding" 
+  else 
+    pure $ [Base16, Base58, Base64] !! (head bsi)
+  where
+    len = Prelude.length bsi
+    bsi = elemIndices 0 $ map (unmatch h) [b16Alphabet, b58Alphabet, b64Alphabet]
+    unmatch str alphabet = BS.length $ BS.filter (`BS.notElem` alphabet) str
+
+    b16Alphabet :: BS.ByteString
+    b16Alphabet = "0123456789abcdef"
+
+    b58Alphabet :: BS.ByteString
+    b58Alphabet = B58.unAlphabet B58.bitcoinAlphabet
+
+    b64Alphabet :: BS.ByteString
+    b64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+
+-- TODO: test this with quickcheck
+
+-- old implementation
+-- getBase :: BS.ByteString -> Either String Base
+-- getBase h
+--       | startWiths h ["1114", "1220", "1340", "1440", "1530", "1620", "171c", "4040", "4120"] = Right Base16
+--       | startWiths h ["5d", "Qm", "8V", "8t", "G9", "W1", "5d", "S2", "2U"] = Right Base58
+--       | startWiths h ["ER", "Ei", "E0", "FE", "FT", "Fi", "Fx", "QE", "QS"] = Right Base64
+--       | otherwise = Left "Unable to infer an encoding"
+--       where startWiths h = any (`BS.isPrefixOf` h)
+
 
 -- | Encode the binary data using a given 'Base'.
 encoder :: ByteArrayAccess a => Base -> a -> Either String BA.Bytes
