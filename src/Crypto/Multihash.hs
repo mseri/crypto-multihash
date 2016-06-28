@@ -19,7 +19,7 @@
 --
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 -- TODO: use length in check* to treat correctly truncated hashes
 -- see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612
@@ -39,6 +39,7 @@ module Crypto.Multihash
   , truncatedMultihash'
   , checkMultihash
   , checkMultihash'
+  , getBase
   -- * Re-exported types
   , HashAlgorithm
   , SHA1(..)

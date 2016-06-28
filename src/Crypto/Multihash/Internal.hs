@@ -41,8 +41,10 @@ convertFromBase b bs = case b of
     return (BA.convert dec)
   Base64 -> BE.convertFromBase BE.Base64 bs
 
--- | Infer the 'Base' encoding function from an encoded 'BS.BinaryString' representing 
--- a 'MultihashDigest'.
+-- | Infer the 'Base' encoding function from an encoded 'BS.BinaryString'.
+--   Supports only 'Base16', bitcoin 'Base58' and 'Base64' for the moment.
+--   NOTE: it can fail or _infer the wrong encoding_ if the string is too short
+--   or if it is encoded using a different standard.
 getBase :: BS.ByteString -> Either String Base
 getBase h = if len == 0 
   then 

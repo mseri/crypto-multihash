@@ -3,14 +3,20 @@
 import Control.Monad (zipWithM)
 import Crypto.Multihash
 import Crypto.Multihash.Weak (weakMultihash, checkWeakMultihash, toWeakMultihash)
-import Data.ByteString (ByteString, pack)
-import Test.Hspec
+import Data.ByteString (ByteString, pack, unpack)
 import Text.Printf (printf)
+
+import Test.Hspec
+import Test.QuickCheck
 
 -- TODO: 
 --   * use QuickCheck to test Multihash serializatio/deserializatio/check properties
 --     especially now that we infer the decoding for arbitrary truncations
 --   * test for valid and invalid truncated multihashes
+
+instance Arbitrary ByteString where
+    arbitrary = pack `fmap` arbitrary
+    --coarbitrary = coarbitrary . unpack
 
 testString :: ByteString
 testString = "test"
@@ -18,8 +24,31 @@ testString = "test"
 failTestString :: ByteString
 failTestString = "test1"
 
+weakAlgos = [ "sha1", "sha256", "sha512", "sha3-512" 
+            , "sha3-384", "sha3-256", "sha3-224"
+            , "blake2b-512", "blake2s-256" ]
+
+-- Useful for testing, generated in Weak by
+-- tester = map (\(a,_) -> _getLength $ weakMultihash' a ("test"::ByteString)) allowedAlgos
+maxHashLengths = [20,32,64,64,48,32,28,64,32]
+
 main :: IO ()
-main = hspec $ do
+main = runSpec
+
+prop_gen_check :: ByteString -> Property
+prop_gen_check str = 
+  let m = multihash SHA1 str
+      enc :: ByteString
+      enc = encode' Base16 m 
+  in check' enc m === True
+
+runQC = quickCheck prop_gen_check
+
+runSpec = hspec $ do
+  describe "Multihash: check properties with QuickCheck" $
+    it "correctly encodes and checks SHA1" $
+      property prop_gen_check
+
   mhEncoding SHA1 h1
   mhCheck mh checkMultihash SHA1 h1
   mhEncoding SHA256 h2
@@ -38,12 +67,12 @@ main = hspec $ do
   mhCheck mh checkMultihash Blake2b_512 h8
   mhEncoding Blake2s_256 h9
   mhCheck mh checkMultihash Blake2s_256 h9
-
+  ------------------------------------------------------------------------
   traverse (uncurry wmhEncoding) 
            (zip weakAlgos h)
   traverse (uncurry (mhCheck wmh checkWeakMultihash))
            (zip weakAlgos h)
-
+  ------------------------------------------------------------------------
   describe "Multihash: fails correctly when" $ do
     it "checking an invalid truncated multihash" $
       checkMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
@@ -59,6 +88,8 @@ main = hspec $ do
     it "checking an invalid truncated multihash" $
       checkWeakMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
+  ------------------------------------------------------------------------
+
   where
     mh = "Multihash"::String
     wmh = "Weak Multihash"::String
@@ -115,10 +146,6 @@ main = hspec $ do
         it "fails correctly on Base64 hashes" $
           checker e64 failTestString `shouldBe` Right False
 
-    weakAlgos = [ "sha1", "sha256", "sha512", "sha3-512" 
-                , "sha3-384", "sha3-256", "sha3-224"
-                , "blake2b-512", "blake2s-256" ]
-
     -- array of triples of hashes of the string "test"
     h@[h1, h2, h3, h4, h5, h6, h7, h8, h9] = 
       [
@@ -150,4 +177,4 @@ main = hspec $ do
         , "2UPuEK7FVakwP3yUak5jKQhZb6pgpbcqYoRZ2tDzgeCfVr5"
         , "QSDzCPwCzpFyrQKn11gA7PwCcQm8Z5h+oyq6m43MexAVDg==")
       ]
-  
+

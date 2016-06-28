@@ -46,6 +46,7 @@ module Crypto.Multihash.Weak
   , toWeakMultihash
   , checkWeakMultihash
   , checkWeakMultihash'
+  , getBase
   ) where
 
 import Crypto.Hash (Digest, hashWith, hashlazy)
