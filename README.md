@@ -97,8 +97,8 @@ To run tests: `stack test`
 
 # TODO
 
-- Test the new `getBase` implementation using quickcheck (critical, I will not push new version until this is done)
-- Test the correct support of truncated multihashes
+- ~~Test the new `getBase` implementation using quickcheck~~
+- Test the correct support of truncated multihashes, including the truncation length that triggers easy failures in `getBase`
 - Implement benchmarks, then start optimising the code where possible
 - ~~Use the hash length in `checkPayload` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)~~
 - Improve documentation
