@@ -50,7 +50,7 @@ getBase h = if len == 0
   then 
     Left "Unable to infer an encoding" 
   else 
-    pure $ [Base16, Base58, Base64] !! (head bsi)
+    pure $ [Base16, Base58, Base64] !! head bsi
   where
     len = Prelude.length bsi
     bsi = elemIndices 0 $ map (unmatch h) [b16Alphabet, b58Alphabet, b64Alphabet]

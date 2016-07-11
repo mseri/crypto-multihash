@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Monad (zipWithM)
+import Control.Monad (zipWithM, forM_)
 import Crypto.Multihash
 import Crypto.Multihash.Weak (weakMultihash, checkWeakMultihash, toWeakMultihash)
 import Data.ByteString (ByteString, pack, unpack)
@@ -42,13 +42,24 @@ prop_gen_check str =
       enc = encode' Base16 m 
   in check' enc m === True
 
+prop_get_base :: Base -> ByteString -> Property
+prop_get_base base str = 
+  let m = multihash SHA1 str
+      enc :: ByteString
+      enc = encode' base m 
+  in getBase enc === Right base
+
 runQC = quickCheck prop_gen_check
 
 runSpec = hspec $ do
-  describe "Multihash: check properties with QuickCheck" $
+  ------------------------------------------------------------------------
+  describe "Multihash: check properties with QuickCheck" $ do
     it "correctly encodes and checks SHA1" $
       property prop_gen_check
-
+    forM_ [Base16, Base58, Base64] $ \b -> 
+      it ("correctly infer" ++ show b ++ "encodings on full-length hashes") $ 
+        property (prop_get_base b)
+  ------------------------------------------------------------------------
   mhEncoding SHA1 h1
   mhCheck mh checkMultihash SHA1 h1
   mhEncoding SHA256 h2
@@ -80,7 +91,7 @@ runSpec = hspec $ do
     it "checking an invalid truncated multihash" $
       checkMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
-
+  
   describe "Weak Multihash: fails correctly when" $ do
     it "checking an invalid truncated multihash" $
       checkWeakMultihash ("1340ee26b0dd4af7e749aa1a8e"::ByteString) testString 
@@ -89,7 +100,6 @@ runSpec = hspec $ do
       checkWeakMultihash ("dd4af7e749aa1a8e1340ee26b0"::ByteString) testString 
         `shouldBe` Left "Corrupted MultihasDigest: invalid length"
   ------------------------------------------------------------------------
-
   where
     mh = "Multihash"::String
     wmh = "Weak Multihash"::String
