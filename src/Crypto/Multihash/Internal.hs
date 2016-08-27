@@ -35,7 +35,7 @@ convertFromBase :: Base -> BS.ByteString -> Either String BS.ByteString
 convertFromBase b bs = case b of
   Base2  -> Left "This is not supposed to happen"
   Base16 -> BE.convertFromBase BE.Base16 bs
-  Base32 -> Left "Base32 decoder not implemented"
+  Base32 -> BE.convertFromBase BE.Base32 bs
   Base58 -> do
     dec <- maybeToEither "Base58 decoding error" (B58.decodeBase58 B58.bitcoinAlphabet bs)
     return (BA.convert dec)
@@ -58,6 +58,11 @@ getBase h = if len == 0
 
     b16Alphabet :: BS.ByteString
     b16Alphabet = "0123456789abcdef"
+
+    -- from RFC https://tools.ietf.org/rfc/rfc4648.txt
+    -- same one used by Hasekll's `memory` for the encoding/decoding
+    b32Alphabet :: BS.ByteString
+    b32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 
     b58Alphabet :: BS.ByteString
     b58Alphabet = B58.unAlphabet B58.bitcoinAlphabet
@@ -82,7 +87,7 @@ encoder :: ByteArrayAccess a => Base -> a -> Either String BA.Bytes
 encoder base bs = case base of
             Base2  -> return $ BA.convert bs
             Base16 -> return $ BE.convertToBase BE.Base16 bs
-            Base32 -> Left "Base32 encoder not implemented"
+            Base32 -> return $ BE.convertToBase BE.Base32 bs
             Base58 -> return $ BA.convert $ B58.encodeBase58 B58.bitcoinAlphabet 
                                                              (BA.convert bs :: BS.ByteString)
             Base64 -> return $ BE.convertToBase BE.Base64 bs

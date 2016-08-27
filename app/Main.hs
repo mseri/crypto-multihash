@@ -23,7 +23,7 @@ printer alg bs = do
   let m = multihash alg bs
   putStrLn $ printf "Hash algorithm: %s" (show alg)
   putStrLn $ printf "Base16: %s" (encode' Base16 m :: String)
-  -- Base32 missing
+  putStrLn $ printf "Base32: %s" (encode' Base32 m :: String)
   putStrLn $ printf "Base58: %s" (encode' Base58 m :: String)
   putStrLn $ printf "Base64: %s" (encode' Base64 m :: String)
   putStrLn ""
