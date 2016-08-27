@@ -16,7 +16,7 @@ import Data.String.Conversions
 -- | 'Base' usable to encode the digest 
 data Base = Base2   -- ^ Binary form
           | Base16  -- ^ Hex encoding
-          | Base32  -- ^ Not yet implemented. Waiting for <https://github.com/jbenet/multihash/issues/31 this issue to resolve>
+          | Base32  -- ^ Avoid. Wait for <https://github.com/jbenet/multihash/issues/31 this issue to resolve>
           | Base58  -- ^ Bitcoin base58 encoding
           | Base64  -- ^ Base64 encoding
           deriving (Eq, Show)
