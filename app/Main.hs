@@ -16,7 +16,7 @@ main :: IO ()
 main = do
   (_args, files) <- getArgs >>= parse
   mapM_ printers files
-  putStrLn "Done! Note: shake-128/256 and Base32 are not yet part of the library"
+  putStrLn "Done! Note: shake-128/256 are not yet part of the library"
  
 printer :: (HashAlgorithm a, Codable a, Show a) => a -> ByteString -> IO ()
 printer alg bs = do
