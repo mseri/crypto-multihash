@@ -13,9 +13,7 @@ Multihash is a protocol for encoding the hash algorithm and digest length at the
 This library is still experimental and the api is not guaranteed stable. 
 I will increment the version number appropriately in case of breaking changes.
 
-For the moment the library implements all the expected hashing algorithms with the exception of shake-128 and shake-256. A Multihash can be encoded in hex (`Base16`), bitcoin base58 (`Base58`) and base64 (`Base64`). 
-
-The `Base32` encoding is not yet supported due to discrepancy between the encoding from `Data.ByteArray.Encoding` and the one appearing in the official multihash page.
+For the moment the library implements all the expected hashing algorithms with the exception of shake-128 and shake-256. A Multihash can be encoded in hex (`Base16`), base 32 (`Base32`), bitcoin base58 (`Base58`) and base64 (`Base64`). 
 
 # Usage
 
@@ -98,10 +96,9 @@ To run tests: `stack test`
 # TODO
 
 - ~~Test the new `getBase` implementation using quickcheck~~
-- Test the correct support of truncated multihashes, including the truncation length that triggers easy failures in `getBase`
+- Accurately test the correct support of truncated multihashes, including the truncation length that triggers easy failures in `getBase`
 - Implement benchmarks, then start optimising the code where possible
 - ~~Use the hash length in `checkPayload` to treat correctly truncated hashes (see https://github.com/jbenet/multihash/issues/1#issuecomment-91783612)~~
 - Improve documentation
-- Improve testing for for raised exceptions
 - Implement `shake-128` and `shake-256` multihashes
-- Implement `Base32` encoding waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)
+- ~~Implement `Base32` encoding~~ waiting for https://github.com/jbenet/multihash/issues/31 to be resolved)

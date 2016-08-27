@@ -50,10 +50,10 @@ getBase h = if len == 0
   then 
     Left "Unable to infer an encoding" 
   else 
-    pure $ [Base16, Base58, Base64] !! head bsi
+    pure $ [Base16, Base32, Base58, Base64] !! head bsi
   where
     len = Prelude.length bsi
-    bsi = elemIndices 0 $ map (unmatch h) [b16Alphabet, b58Alphabet, b64Alphabet]
+    bsi = elemIndices 0 $ map (unmatch h) [b16Alphabet, b32Alphabet, b58Alphabet, b64Alphabet]
     unmatch str alphabet = BS.length $ BS.filter (`BS.notElem` alphabet) str
 
     b16Alphabet :: BS.ByteString
@@ -62,7 +62,7 @@ getBase h = if len == 0
     -- from RFC https://tools.ietf.org/rfc/rfc4648.txt
     -- same one used by Hasekll's `memory` for the encoding/decoding
     b32Alphabet :: BS.ByteString
-    b32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    b32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567="
 
     b58Alphabet :: BS.ByteString
     b58Alphabet = B58.unAlphabet B58.bitcoinAlphabet
